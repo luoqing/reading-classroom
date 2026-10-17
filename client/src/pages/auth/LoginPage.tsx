@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { BookOpenText, KeyRound, Leaf, LogIn } from 'lucide-react';
+import { ArrowLeft, BookOpenText, KeyRound, Leaf, LogIn } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import type { LoginResult } from '@shared/api.interface';
 import { login } from '../../api/auth';
 import './login.css';
 
-export default function LoginPage({ onLogin }: { onLogin: (result: LoginResult) => void }) {
+export default function LoginPage({ onLogin, onCancel }: { onLogin: (result: LoginResult) => void; onCancel: () => void }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -39,6 +39,7 @@ export default function LoginPage({ onLogin }: { onLogin: (result: LoginResult) 
     </section>
     <section className="login-panel">
       <form onSubmit={submit}>
+        <button className="login-back" type="button" onClick={onCancel}><ArrowLeft size={16} />返回匿名试用</button>
         <span className="login-mark"><KeyRound size={24} /></span>
         <div className="login-eyebrow">账号登录</div>
         <h2>欢迎回来</h2>
@@ -46,7 +47,7 @@ export default function LoginPage({ onLogin }: { onLogin: (result: LoginResult) 
         <label>账号<input autoComplete="username" value={username} onChange={event => setUsername(event.target.value)} placeholder="输入账号" required /></label>
         <label>密码<input autoComplete="current-password" type="password" value={password} onChange={event => setPassword(event.target.value)} placeholder="输入密码" required /></label>
         {message && <p className="login-error" role="alert">{message}</p>}
-        <button disabled={busy} type="submit"><LogIn size={18} />{busy ? '正在登录…' : '进入朗读小屋'}</button>
+        <button className="login-submit" disabled={busy} type="submit"><LogIn size={18} />{busy ? '正在登录…' : '进入朗读小屋'}</button>
         <p className="login-footnote">这里不提供自助注册，学生账号由老师统一管理。</p>
       </form>
     </section>

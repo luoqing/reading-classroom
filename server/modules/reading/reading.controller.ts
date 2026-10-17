@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Header, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
 import type { Request } from 'express';
-import type { EvaluationReportRequest, ReadingRequest, ReadingResult } from '../../../shared/api.interface';
+import type { EvaluationReportRequest, GuestReadingRequest, GuestReadingResult, ReadingRequest, ReadingResult } from '../../../shared/api.interface';
 import { AuthService } from '../auth/auth.service';
 import { ReadingService } from './reading.service';
 
@@ -23,6 +23,13 @@ export class ReadingController {
   async evaluate(@Req() req: Request, @Body() body: ReadingRequest): Promise<ReadingResult> {
     const account = await this.auth.requireAccount(req, 'student');
     return this.reading.evaluate(body, account.id);
+  }
+
+  @Post('evaluate-guest')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  evaluateGuest(@Body() body: GuestReadingRequest): Promise<GuestReadingResult> {
+    return this.reading.evaluateGuest(body);
   }
 
   @Patch('evaluations/:id/report')

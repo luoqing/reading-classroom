@@ -75,6 +75,16 @@ export interface ReadingResult {
   sid?: string;
 }
 
+export interface GuestReadingRequest {
+  text: string;
+  audio: string;
+}
+
+export interface GuestReadingResult {
+  xml: string;
+  sid?: string;
+}
+
 export interface EvaluationReportRequest {
   accuracyStars: number | null;
   naturalStars: number | null;

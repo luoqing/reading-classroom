@@ -5,7 +5,7 @@ import { initializeReading } from './reading.js';
 import { getLesson } from '../../api/lessons';
 import './reading.css';
 
-export default function ReadingPage() {
+export default function ReadingPage({ persistent = false }: { persistent?: boolean }) {
   const container = useRef<HTMLDivElement>(null);
   const [lesson, setLesson] = useState<LessonView | null>(null);
   const [error, setError] = useState('');
@@ -24,8 +24,8 @@ export default function ReadingPage() {
       /<audio id="demoAudio" preload="none" src="[^"]+"><\/audio>/,
       '<audio id="demoAudio" preload="none"></audio>',
     );
-    return initializeReading(lesson);
-  }, [lesson]);
+    return initializeReading(lesson, { persistent });
+  }, [lesson, persistent]);
 
   return <div ref={container}>{!lesson && <div className="reading-loading">{error || '正在加载课文…'}</div>}</div>;
 }

@@ -70,7 +70,7 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
   dialog.append(minimizeButton);
   pose(false);
   const stop = () => { request++; replayAfterComment = false; clearTimeout(minimizeTimer); audio.pause(); pose(false); };
-  const close = () => { stop(); $('audio').pause(); dialog.classList.remove('minimized'); if (dialog.open) dialog.close(); };
+  const close = () => { stop(); $('audio')?.pause(); dialog.classList.remove('minimized'); if (dialog.open) dialog.close(); };
   const open = () => { clearTimeout(minimizeTimer); dialog.classList.remove('minimized'); if (!dialog.open) dialog.show(); };
   const setSpeechQueue = urls => {
     speechQueue = urls.filter(Boolean);
@@ -173,7 +173,7 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
   $('teacherPortrait').onkeydown = event => { if (event.key !== 'Enter' && event.key !== ' ') return; event.preventDefault(); togglePortrait(); };
   minimizeButton.onclick = () => { clearTimeout(minimizeTimer); dialog.classList.add('minimized'); };
   $('teacherClose').onclick = close;
-  dialog.onclose = () => { stop(); $('audio').pause(); };
+  dialog.onclose = () => { stop(); $('audio')?.pause(); };
   dialog.oncancel = close;
   $('teacherPractice').onclick = () => { if (focus) { stop(); onListen(focus); } else { close(); onPractice(); } };
   $('meetTeacher').onclick = () => show(getReport());

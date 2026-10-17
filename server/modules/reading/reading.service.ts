@@ -3,7 +3,7 @@ import { BadGatewayException, BadRequestException, HttpException, Inject, Inject
 import { DRIZZLE_DATABASE, FileService, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { createHmac } from 'node:crypto';
-import type { EvaluationReportRequest, ReadingHistoryItem, ReadingRequest, ReadingResult } from '../../../shared/api.interface';
+import type { EvaluationReportRequest, GuestReadingRequest, GuestReadingResult, ReadingHistoryItem, ReadingRequest, ReadingResult } from '../../../shared/api.interface';
 import { lesson, lessonPage, readingAttempt, readingClip, readingEvaluation, studentLessonProgress } from '@server/database/schema';
 import { signedStoredFileUrl } from '@server/common/storage-url';
 
@@ -24,16 +24,7 @@ export class ReadingService {
   }
 
   async evaluate(input: ReadingRequest, studentId: string): Promise<ReadingResult> {
-    if (!input || typeof input.text !== 'string' || !input.text.trim() || input.text.length > 500) {
-      throw new BadRequestException('课文正文需要1至500字。');
-    }
-    if (typeof input.audio !== 'string' || input.audio.length > 3882700 || !/^[A-Za-z0-9+/]+={0,2}$/.test(input.audio)) {
-      throw new BadRequestException('录音格式不正确，请重新录音。');
-    }
-    const audio = Buffer.from(input.audio, 'base64');
-    if (audio.length < 16000 || audio.length > 2912000 || audio.length % 2 !== 0) {
-      throw new BadRequestException('请录制0.5至90秒的音频。');
-    }
+    const audio = this.validateAudio(input);
     if (!input.storedAudio?.bucketId || !input.storedAudio.filePath || !input.lessonSlug) {
       throw new BadRequestException('录音尚未保存，请重新录音。');
     }
@@ -121,6 +112,26 @@ export class ReadingService {
     }
   }
 
+  async evaluateGuest(input: GuestReadingRequest): Promise<GuestReadingResult> {
+    const audio = this.validateAudio(input);
+    if (!this.configured()) throw new ServiceUnavailableException('老师尚未配置讯飞服务。');
+    const now = Date.now();
+    this.started = this.started.filter((time: number) => now - time < 3600000);
+    if (this.active >= 2 || this.started.length >= 60) {
+      throw new HttpException('当前练习较多，请稍后再提交。', 429);
+    }
+    this.active++;
+    this.started.push(now);
+    try {
+      return await this.callProvider(input.text, audio);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new BadGatewayException(error instanceof Error ? error.message : '讯飞评测失败，请重试。');
+    } finally {
+      this.active--;
+    }
+  }
+
   async saveReport(evaluationId: string, studentId: string, report: EvaluationReportRequest) {
     const [owned] = await this.db.select({ evaluation: readingEvaluation })
       .from(readingEvaluation)
@@ -171,6 +182,20 @@ export class ReadingService {
       issueCount: row.evaluation?.issueCount ?? null,
       report: row.evaluation ? row.evaluation.reportJson as Record<string, unknown> : null,
     })));
+  }
+
+  private validateAudio(input: GuestReadingRequest): Buffer {
+    if (!input || typeof input.text !== 'string' || !input.text.trim() || input.text.length > 500) {
+      throw new BadRequestException('课文正文需要1至500字。');
+    }
+    if (typeof input.audio !== 'string' || input.audio.length > 3882700 || !/^[A-Za-z0-9+/]+={0,2}$/.test(input.audio)) {
+      throw new BadRequestException('录音格式不正确，请重新录音。');
+    }
+    const audio = Buffer.from(input.audio, 'base64');
+    if (audio.length < 16000 || audio.length > 2912000 || audio.length % 2 !== 0) {
+      throw new BadRequestException('请录制0.5至90秒的音频。');
+    }
+    return audio;
   }
 
   private callProvider(text: string, audio: Buffer): Promise<ProviderResult> {

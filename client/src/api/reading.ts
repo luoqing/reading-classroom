@@ -3,6 +3,7 @@ import { uploadFile } from '../components/business-ui/api/files/service';
 import { isAxiosError } from 'axios';
 import type {
   EvaluationReportRequest,
+  GuestReadingResult,
   ReadingHistoryItem,
   ReadingResult,
   StoredClip,
@@ -15,6 +16,25 @@ function base64(arrayBuffer: ArrayBuffer) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
   }
   return btoa(binary);
+}
+
+export async function evaluateGuestReading(text: string, pcm: ArrayBuffer): Promise<GuestReadingResult> {
+  try {
+    const response = await axiosForBackend<GuestReadingResult>({
+      url: '/api/reading/evaluate-guest',
+      method: 'POST',
+      data: { text, audio: base64(pcm) },
+      timeout: 125000,
+      meta: { autoJumpToLogin: false },
+    });
+    return response.data;
+  } catch (error) {
+    if (isAxiosError(error)) {
+      if (error.response?.status === 429) throw new Error('当前练习较多，请稍后再提交。');
+      throw new Error(error.response?.data?.error?.message || '评测请求失败，请稍后重试。');
+    }
+    throw error;
+  }
 }
 
 interface ClipUploadInput {
