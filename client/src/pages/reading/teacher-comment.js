@@ -6,29 +6,8 @@ const dimensions = [
 
 const scoreText = stars => Number.isFinite(stars) ? `${stars}颗星` : '待复核';
 
-const feedbackByDimension = {
-  accuracy: {
-    1: '放慢一点，把每个字音读清楚',
-    2: '大部分字音读准了，还有一个小地方可以再听一听',
-    3: '字音整体读得很清楚',
-    review: '这次需要结合回放再核实字音',
-  },
-  natural: {
-    1: '注意在标点处停一停，句子中间连起来',
-    2: '大部分断句合适，节奏还可以更连贯',
-    3: '断句和节奏都很自然',
-    review: '这次需要结合回放再核实断句和节奏',
-  },
-  delivery: {
-    1: '再留意“一”的变调和“了”的轻声',
-    2: '大部分变调和轻声读对了，再练一个小地方',
-    3: '“一”的变调和“了”的轻声都读得很到位',
-    review: '这次需要结合回放再核实轻声和变调',
-  },
-};
-
 function dimensionComment(dimension, goal) {
-  const detail = feedbackByDimension[dimension.key][Number.isFinite(goal?.stars) ? goal.stars : 'review'];
+  const detail = goal?.good || (Number.isFinite(goal?.stars) ? '已完成本项评测' : '这次需要结合回放再核实');
   return `${dimension.label}：${scoreText(goal?.stars)}，${detail}`;
 }
 

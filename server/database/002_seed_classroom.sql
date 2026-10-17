@@ -1,7 +1,7 @@
 INSERT INTO user_account (username, password_hash, account_type, display_name, status)
 VALUES (
   'admin',
-  'scrypt$57ed0d6526dd0173d8fc4ab04ecc5dcb$3fd761a86f072f6e43c0a2899198b7c6881149c75f095daa1caeae62d92e20a7d217b8594ffa7e5163982df50da3c3794cd96191be9ef40d28a25c5babe61016',
+  'scrypt$bb96a05583fdcaca7f86c1100f95d2ad$2c938174975e2a07c850930d2718dbdb550dc7986393f759029fa1340e890caeacef44cadeedc67330a571f31c41d9242380e2c005b6c5dc72e30275cac1f235',
   'admin',
   '罗老师',
   'active'
@@ -16,7 +16,7 @@ ON CONFLICT (lower(username)) DO UPDATE SET
 INSERT INTO user_account (username, password_hash, account_type, display_name, student_no, class_name, status)
 VALUES (
   'student001',
-  'scrypt$5d85939067acd71753cf8e97efaecca6$7ee171eb8babd2dc859703ae3b4ff761db2d9dca82c3e757c256a3cda8c6221515011b476b961c40f46c0d57d97f2e972d45757bae9179d9a24082621045a42f',
+  'scrypt$fe1e1283b3451b8f825d2cafa069f934$f794428505eca247cde8afe7cfafca6b252aed5b1d30262b5801e49600e3d2ee4cec75b850e8672cb52a16e8eec072d81ec1a7d78d7dbfd0ecd210ebd3758d8a',
   'student',
   '示例学生',
   '001',

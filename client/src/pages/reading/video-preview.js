@@ -1,4 +1,4 @@
-import { readingAssets } from './assets';
+import { readingAssets } from './assets.js';
 
 const autumnScenes = [
   {

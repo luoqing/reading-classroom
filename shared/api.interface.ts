@@ -31,6 +31,15 @@ export interface LessonPageView {
   videoEndMs: number | null;
 }
 
+export interface LessonListItem {
+  id: string;
+  slug: string;
+  title: string;
+  gradeLabel: string | null;
+  revision: number;
+  coverUrl: string | null;
+}
+
 export interface LessonView {
   id: string;
   slug: string;

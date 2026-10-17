@@ -1,5 +1,5 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -12,6 +12,12 @@ import { createPortal } from 'react-dom';
 import { Toaster } from '@client/src/components/ui/sonner';
 
 const CLIENT_BASE_PATH = process.env.CLIENT_BASE_PATH || '/';
+
+declare global {
+  interface Window {
+    __READING_CLASSROOM_ROOT__?: Root;
+  }
+}
 
 const MainApp = () => {
   return (
@@ -33,4 +39,5 @@ const MainApp = () => {
   );
 };
 
-createRoot(document.getElementById('root')!).render(<MainApp />);
+window.__READING_CLASSROOM_ROOT__ ??= createRoot(document.getElementById('root')!);
+window.__READING_CLASSROOM_ROOT__.render(<MainApp />);

@@ -26,6 +26,30 @@ const word = (content, position, options = {}) => ({
   ...options,
 });
 
+const autumnRubric = {
+  accuracyTargets: [
+    { char: '秋', reading: 'qiū' },
+    { char: '气', reading: 'qì' },
+  ],
+  delivery: {
+    yiTargets: [
+      { label: '一片片', tone: 2, reading: 'yí' },
+      { label: '一群', tone: 4, reading: 'yì' },
+      { label: '第一处“一会儿”', tone: 2, reading: 'yí' },
+      { label: '第二处“一会儿”', tone: 2, reading: 'yí' },
+      { label: '“一”字', tone: 1, reading: 'yī' },
+    ],
+    neutralTargets: ['天气凉了', '树叶黄了', '秋天来了'],
+  },
+  thresholds: { normalPhoneLevel: 3, targetPhoneLevel: 2 },
+};
+
+const houseRubric = {
+  accuracyTargets: [{ char: '房', reading: 'fáng' }],
+  delivery: { description: '“青青”和“白白”读得轻快，问句读出疑问语气' },
+  thresholds: { normalPhoneLevel: 3, targetPhoneLevel: 2 },
+};
+
 const readPcm = name => {
   const file = fs.readFileSync(new URL(`../tmp/evaluation/${name}.pcm`, import.meta.url));
   return new Int16Array(file.buffer, file.byteOffset, file.byteLength / 2);
@@ -41,16 +65,18 @@ const readYiAnalyses = name => {
   });
 };
 
-test('isolated 一 samples are distinguished as first through fourth tones', () => {
+const hasEvaluationFixtures = fs.existsSync(new URL('../tmp/evaluation/isolated-yi1.pcm', import.meta.url))
+  && fs.existsSync(new URL('../tmp/evaluation/baseline.pcm', import.meta.url));
+
+test('isolated 一 samples are distinguished as first through fourth tones', { skip: !hasEvaluationFixtures }, () => {
   assert.equal(classifyMandarinTone(readPcm('isolated-yi1')).tone, 1);
   assert.equal(classifyMandarinTone(readPcm('isolated-yi2')).tone, 2);
   assert.equal(classifyMandarinTone(readPcm('isolated-yi3')).tone, 3);
   assert.equal(classifyMandarinTone(readPcm('isolated-yi4')).tone, 4);
 });
 
-test('lenient contextual tone checks accept generated correct Autumn reading and reject strong mismatches', () => {
+test('lenient contextual tone checks accept generated correct Autumn reading and reject strong mismatches', { skip: !hasEvaluationFixtures }, () => {
   const evaluate = name => buildLessonGoals({
-    lessonId: 'autumn',
     words: deliveryWords({ tones: [2, 4, 2, 2, 1] }).map((item, index) => index < 5
       ? { ...item, toneAnalysis: readYiAnalyses(name)[index] }
       : item),
@@ -58,6 +84,7 @@ test('lenient contextual tone checks accept generated correct Autumn reading and
     aligned: true,
     text: '一一一一一了了了',
     confidentIssues: [],
+    rubric: autumnRubric,
   }).delivery;
 
   assert.equal(evaluate('baseline').stars, 3);
@@ -72,7 +99,7 @@ test('a level-2 phone warning on a non-target character is not shown as a readin
     word('气', 1),
   ];
 
-  assert.deepEqual(buildConfidentIssues({ lessonId: 'autumn', words, aligned: true }), []);
+  assert.deepEqual(buildConfidentIssues({ words, aligned: true, rubric: autumnRubric }), []);
 });
 
 test('a level-3 phone warning on any character is shown as a reading error', () => {
@@ -81,7 +108,7 @@ test('a level-3 phone warning on any character is shown as a reading error', () 
     word('气', 1),
   ];
 
-  const issues = buildConfidentIssues({ lessonId: 'autumn', words, aligned: true });
+  const issues = buildConfidentIssues({ words, aligned: true, rubric: autumnRubric });
   assert.equal(issues.length, 1);
   assert.equal(issues[0].word, '天');
   assert.deepEqual(issues[0].labels, ['字音需再听一次']);
@@ -93,22 +120,24 @@ test('a severe phone warning on an Autumn pronunciation target remains actionabl
     word('天', 1),
   ];
 
-  const issues = buildConfidentIssues({ lessonId: 'autumn', words, aligned: true });
+  const issues = buildConfidentIssues({ words, aligned: true, rubric: autumnRubric });
   assert.equal(issues.length, 1);
   assert.equal(issues[0].word, '秋');
   assert.match(issues[0].labels.join(''), /qiū/);
 });
 
-test('one level-2 phone warning on an Autumn target is treated as a mild fluctuation', () => {
+test('one level-2 phone warning on a configured target remains actionable', () => {
   const words = [word('秋', 0, { phones: [{ error: 1, level: 2 }] })];
 
-  assert.deepEqual(buildConfidentIssues({ lessonId: 'autumn', words, aligned: true }), []);
+  const issues = buildConfidentIssues({ words, aligned: true, rubric: autumnRubric });
+  assert.equal(issues.length, 1);
+  assert.match(issues[0].labels.join(''), /qiū/);
 });
 
 test('two level-2 phone warnings on an Autumn target remain actionable', () => {
   const words = [word('秋', 0, { phones: [{ error: 1, level: 2 }, { error: 2, level: 2 }] })];
 
-  const issues = buildConfidentIssues({ lessonId: 'autumn', words, aligned: true });
+  const issues = buildConfidentIssues({ words, aligned: true, rubric: autumnRubric });
   assert.equal(issues.length, 1);
   assert.equal(issues[0].word, '秋');
   assert.match(issues[0].labels.join(''), /qiū/);
@@ -117,7 +146,7 @@ test('two level-2 phone warnings on an Autumn target remain actionable', () => {
 test('low-severity phone warnings do not fail an Autumn pronunciation target', () => {
   const words = [word('秋', 0, { phones: [{ error: 1, level: 1 }] })];
 
-  assert.deepEqual(buildConfidentIssues({ lessonId: 'autumn', words, aligned: true }), []);
+  assert.deepEqual(buildConfidentIssues({ words, aligned: true, rubric: autumnRubric }), []);
 });
 
 test('erhua in 一会儿 is not reported as a missing character', () => {
@@ -126,7 +155,7 @@ test('erhua in 一会儿 is not reported as a missing character', () => {
     word('儿', 1, { syllables: [{ type: 'paper', symbol: 'er2', duration: 0, dpCode: 16 }] }),
   ];
 
-  assert.deepEqual(buildConfidentIssues({ lessonId: 'autumn', words, aligned: true }), []);
+  assert.deepEqual(buildConfidentIssues({ words, aligned: true, rubric: autumnRubric }), []);
 });
 
 test('a real omission remains visible even when pronunciation hints are filtered', () => {
@@ -135,7 +164,7 @@ test('a real omission remains visible even when pronunciation hints are filtered
     word('气', 1, { syllables: [{ type: 'paper', symbol: 'qi4', duration: 0, dpCode: 16 }] }),
   ];
 
-  const issues = buildConfidentIssues({ lessonId: 'autumn', words, aligned: true });
+  const issues = buildConfidentIssues({ words, aligned: true, rubric: autumnRubric });
   assert.equal(issues.length, 1);
   assert.deepEqual(issues[0].labels, ['疑似漏读']);
 });
@@ -212,12 +241,12 @@ const deliveryWords = ({ tones = [2, 4, 2, 2, 1], leTones = [0, 0, 0], leDuratio
 
 test('Autumn delivery gives three stars when all five 一 tones and three neutral 了 are in place', () => {
   const goals = buildLessonGoals({
-    lessonId: 'autumn',
     words: deliveryWords(),
     scores: {},
     aligned: true,
     text: '一一一一一了了了',
     confidentIssues: [],
+    rubric: autumnRubric,
   });
 
   assert.equal(goals.delivery.stars, 3);
@@ -227,12 +256,12 @@ test('Autumn delivery gives three stars when all five 一 tones and three neutra
 
 test('Autumn delivery points to 一群 when its 一 is not fourth tone', () => {
   const goals = buildLessonGoals({
-    lessonId: 'autumn',
     words: deliveryWords({ tones: [2, 1, 2, 2, 1] }),
     scores: {},
     aligned: true,
     text: '一一一一一了了了',
     confidentIssues: [],
+    rubric: autumnRubric,
   });
 
   assert.equal(goals.delivery.stars, 2);
@@ -248,17 +277,42 @@ test('neutral 了 belongs to delivery instead of natural rhythm', () => {
     ...deliveryWords({ leTones: [4, 0, 0], leDurations: [.8, .2, .2] }).map((item, index) => ({ ...item, position: index + 3 })),
   ];
   const goals = buildLessonGoals({
-    lessonId: 'autumn',
     words,
     scores: {},
     aligned: true,
     text: '天气。秋天',
     confidentIssues: [],
+    rubric: autumnRubric,
   });
 
   assert.equal(goals.natural.stars, 3);
   assert.equal(goals.delivery.stars, 2);
   assert.match(goals.delivery.practice, /轻声“了”/);
+});
+
+test('a lesson with its own rubric receives all three targeted ratings', () => {
+  const words = [
+    word('房', 0),
+    word('子', 1),
+    word('很', 2, { leadingPause: .35 }),
+    word('漂', 3),
+    word('亮', 4),
+  ];
+  const issues = buildConfidentIssues({ words, aligned: true, rubric: houseRubric });
+  const goals = buildLessonGoals({
+    words,
+    scores: { tone_score: 92 },
+    aligned: true,
+    text: '房子。很漂亮',
+    confidentIssues: issues,
+    rubric: houseRubric,
+  });
+
+  assert.equal(goals.targeted, true);
+  assert.equal(goals.accuracy.stars, 3);
+  assert.equal(goals.natural.stars, 3);
+  assert.equal(goals.delivery.stars, 3);
+  assert.match(goals.delivery.practice, /疑问语气/);
 });
 
 test('teacher comment covers all three dimensions and leads with encouragement', () => {
@@ -273,9 +327,9 @@ test('teacher comment covers all three dimensions and leads with encouragement',
   const comment = buildTeacherComment(report);
 
   assert.match(comment.text, /^先夸夸你/);
-  assert.match(comment.text, /读准确：3颗星，字音整体读得很清楚/);
-  assert.match(comment.text, /读自然：3颗星，断句和节奏都很自然/);
-  assert.match(comment.text, /读到位：2颗星，大部分变调和轻声读对了/);
+  assert.match(comment.text, /读准确：3颗星，九个重点字很清楚/);
+  assert.match(comment.text, /读自然：3颗星，断句自然/);
+  assert.match(comment.text, /读到位：2颗星，多数轻声和变调到位/);
   assert.match(comment.text, /一群读四声/);
   assert.match(comment.text, /听一听.*自己的回放.*核实/);
   assert.equal(comment.dimension, 'delivery');

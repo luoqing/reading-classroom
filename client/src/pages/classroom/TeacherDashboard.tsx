@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, ChevronRight, CircleHelp, Headphones, KeyRound, Leaf, LogOut, Plus, RefreshCw, Search, UsersRound, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { BookOpen, ChevronRight, CircleHelp, Headphones, KeyRound, Leaf, LogOut, Pause, Play, Plus, RefreshCw, Search, UsersRound, X } from 'lucide-react';
 import type { AccountView, AdminDashboardResult, AdminStudentSummary, ReadingHistoryItem, StudentCredential } from '@shared/api.interface';
 import { createStudents, getDashboard, getStudentAttempts, resetStudentPassword, setStudentStatus } from '../../api/classroom';
 import { logout } from '../../api/auth';
@@ -7,6 +7,32 @@ import './teacher-dashboard.css';
 
 const stars = (value: number | null) => value === null ? '—' : '★'.repeat(value) + '☆'.repeat(3 - value);
 const dateText = (value: string | null) => value ? new Date(value).toLocaleString('zh-CN', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '还未练习';
+
+function InlineAudio({ src }: { src: string | null }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+
+  useEffect(() => () => audioRef.current?.pause(), []);
+  if (!src) return <span className="inline-audio-empty">暂无</span>;
+
+  const toggle = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) {
+      try { await audio.play(); } catch { setPlaying(false); }
+    } else {
+      audio.pause();
+    }
+  };
+
+  return <span className="inline-audio" onClick={event => event.stopPropagation()}>
+    <audio ref={audioRef} src={src} preload="none" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} />
+    <button type="button" onClick={toggle} aria-label={playing ? '暂停学生最新录音' : '播放学生最新录音'}>
+      {playing ? <Pause size={14} fill="currentColor"/> : <Play size={14} fill="currentColor"/>}<span>{playing ? '暂停' : '播放'}</span>
+    </button>
+  </span>;
+}
 
 export default function TeacherDashboard({ account, onLogout }: { account: AccountView; onLogout: () => void }) {
   const [data, setData] = useState<AdminDashboardResult | null>(null);
@@ -57,13 +83,15 @@ export default function TeacherDashboard({ account, onLogout }: { account: Accou
       <section className="teacher-board">
         <div className="teacher-toolbar"><div className="teacher-search"><Search size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="搜姓名、账号、学号或班级" /></div><div className="teacher-filters">{([['all','全部'],['help','需帮助'],['unpracticed','未练习']] as const).map(([value,label])=><button key={value} className={filter===value?'active':''} onClick={()=>setFilter(value)}>{label}</button>)}</div><button className="icon-button" onClick={refresh} title="刷新"><RefreshCw size={17}/></button></div>
         {message && <p className="teacher-message">{message}</p>}
-        <div className="teacher-table-head"><span>学生</span><span>最新课文</span><span>读准确</span><span>读自然</span><span>读到位</span><span>问题数</span><span></span></div>
-        <div className="student-list">{visible.map(student => <button className="student-row" key={student.id} onClick={() => void openStudent(student)}>
+        <div className="teacher-table-head"><span>学生</span><span>最新课文</span><span>录音</span><span>读准确</span><span>读自然</span><span>读到位</span><span>问题数</span><span></span></div>
+        <div className="student-list">{visible.map(student => <div className="student-row" key={student.id}>
+          <button className="student-row-open" type="button" aria-label={`查看${student.displayName}的练习详情`} onClick={() => void openStudent(student)} />
           <span className="student-name"><i>{student.displayName.slice(0,1)}</i><b>{student.displayName}<small>{student.studentNo || student.username} · {student.className || '未分班'}</small></b></span>
-          <span><b>{student.lessonTitle || '还未开始'}</b><small>{dateText(student.lastPracticedAt)} · {student.attemptCount} 次</small></span>
+          <span className="lesson-summary"><b>{student.lessonTitle || '还未开始'}</b><small>{dateText(student.lastPracticedAt)} · {student.attemptCount} 次</small></span>
+          <InlineAudio src={student.audioUrl}/>
           <span className="dimension-stars">{stars(student.accuracyStars)}</span><span className="dimension-stars">{stars(student.naturalStars)}</span><span className="dimension-stars">{stars(student.deliveryStars)}</span>
           <span className={(student.issueCount||0)>0?'issue-count active':'issue-count'}>{student.issueCount ?? '—'}</span><ChevronRight size={18}/>
-        </button>)}</div>
+        </div>)}</div>
         {data && !visible.length && <div className="teacher-empty"><Leaf size={34}/><strong>暂无匹配的学生</strong><span>可以换个条件，或先批量建号。</span></div>}
       </section>
     </main>

@@ -1,4 +1,4 @@
-import { assetRoot } from './assets';
+import { assetRoot } from './assets.js';
 
 export const teacherSpeechClips = {
   intro: assetRoot + '1879288836555817.mp3',

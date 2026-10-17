@@ -40,6 +40,7 @@ export async function evaluateGuestReading(text: string, pcm: ArrayBuffer): Prom
 interface ClipUploadInput {
   blob: Blob;
   duration: number;
+  pageId?: string;
   sequenceNo: number;
   clipType: 'cover' | 'body';
 }
@@ -62,7 +63,7 @@ export async function evaluateReading(
         filePath: uploaded.filePath,
         mimeType: clip.blob.type,
         durationMs: Math.round(clip.duration * 1000),
-        pageId: null,
+        pageId: clip.pageId || null,
         sequenceNo: clip.sequenceNo,
         clipType: clip.clipType,
       });
