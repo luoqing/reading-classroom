@@ -1,3 +1,7 @@
+import { ReadingModule } from './modules/reading/reading.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { ClassroomModule } from './modules/classroom/classroom.module';
+import { LessonsModule } from './modules/lessons/lessons.module';
 import { APP_FILTER } from '@nestjs/core';
 import { Module } from '@nestjs/common';
 import { PlatformModule } from '@lark-apaas/fullstack-nestjs-core';
@@ -9,6 +13,10 @@ import { ViewModule } from './modules/view/view.module';
   imports: [
     // 平台 Module，提供平台能力
     PlatformModule.forRoot(),
+    AuthModule,
+    LessonsModule,
+    ReadingModule,
+    ClassroomModule,
     // ====== @route-section: business-modules START ======
     // Place all business modules here.Do NOT add fallback modules here.
     // ====== @route-section: business-modules END ======

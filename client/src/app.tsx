@@ -1,22 +1,17 @@
-import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import type { LoginResult } from '@shared/api.interface';
+import { getSession } from './api/auth';
+import LoginPage from './pages/auth/LoginPage';
+import TeacherDashboard from './pages/classroom/TeacherDashboard';
+import StudentApp from './pages/reading/StudentApp';
 
-// This is a temporary placeholder component from spark-framework
-import { Welcome } from '@lark-apaas/client-toolkit/components/Welcome';
-
-import Layout from './components/Layout';
-import NotFound from './pages/NotFound/NotFound';
-
-const RoutesComponent = () => {
-  return (
-    <Routes>
-      <Route element={<Layout />}>
-        {/* This Welcome component should be replaced with the actual home page content */}
-        <Route index element={<Welcome />} />
-      </Route>
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-};
-
-export default RoutesComponent;
+export default function App() {
+  const [session, setSession] = useState<LoginResult | null | undefined>(undefined);
+  useEffect(() => { void getSession().then(setSession).catch(() => setSession(null)); }, []);
+  if (session === undefined) return <div className="app-loading"><span>叶</span><p>正在打开朗读小屋…</p></div>;
+  if (!session) return <LoginPage onLogin={setSession} />;
+  const leave = () => setSession(null);
+  return session.account.role === 'admin'
+    ? <TeacherDashboard account={session.account} onLogout={leave} />
+    : <StudentApp account={session.account} onLogout={leave} />;
+}

@@ -17,7 +17,7 @@
       {
         "include": "capabilities/**/*.json",
         "outDir": "dist/server",
-        "watchAssets": true
+        "watchAssets": false
       }
     ]
   }

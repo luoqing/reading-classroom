@@ -1,0 +1,147 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "朗读小屋·教学版 学生与老师使用动线",
+    "locale": "zh-CN",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "student", "label": "学生" },
+    { "id": "system", "label": "系统与讯飞评测" },
+    { "id": "teacher", "label": "老师" },
+    { "id": "exception", "label": "可恢复情况", "variant": "exception" }
+  ],
+  "phases": [
+    { "id": "enter", "label": "进入学习", "fromCol": 0, "toCol": 1 },
+    { "id": "practice", "label": "朗读与评测", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "followup", "label": "反馈与教学跟进", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "mainPath": [
+    "registerLogin",
+    "chooseLesson",
+    "recordReading",
+    "saveRecording",
+    "evaluateReading",
+    "showFeedback",
+    "teacherDashboard",
+    "teacherReview",
+    "practiceAgain"
+  ],
+  "nodes": [
+    {
+      "id": "registerLogin",
+      "lane": "student",
+      "col": 0,
+      "type": "security",
+      "label": "注册 / 登录",
+      "sublabel": "进入自己的学习档案"
+    },
+    {
+      "id": "chooseLesson",
+      "lane": "student",
+      "col": 1,
+      "type": "frontend",
+      "label": "选择课文",
+      "sublabel": "看正文、拼音和学习目标"
+    },
+    {
+      "id": "recordReading",
+      "lane": "student",
+      "col": 2,
+      "type": "frontend",
+      "label": "开始朗读",
+      "sublabel": "整篇录音或逐页配音"
+    },
+    {
+      "id": "saveRecording",
+      "lane": "system",
+      "col": 2,
+      "type": "database",
+      "label": "先保存录音",
+      "sublabel": "评测失败也不丢原声",
+      "tag": "持久化"
+    },
+    {
+      "id": "evaluateReading",
+      "lane": "system",
+      "col": 3,
+      "type": "backend",
+      "label": "讯飞评测",
+      "sublabel": "对齐字词、时间和音素"
+    },
+    {
+      "id": "showFeedback",
+      "lane": "student",
+      "col": 4,
+      "type": "frontend",
+      "label": "查看三维反馈",
+      "sublabel": "读准确 · 读自然 · 读到位"
+    },
+    {
+      "id": "teacherDashboard",
+      "lane": "teacher",
+      "col": 4,
+      "type": "frontend",
+      "label": "查看班级概览",
+      "sublabel": "筛选学生和薄弱维度"
+    },
+    {
+      "id": "teacherReview",
+      "lane": "teacher",
+      "col": 5,
+      "type": "frontend",
+      "label": "查看学生详情",
+      "sublabel": "回放录音、问题句和历史进步"
+    },
+    {
+      "id": "practiceAgain",
+      "lane": "student",
+      "col": 5,
+      "type": "frontend",
+      "label": "针对性再读",
+      "sublabel": "按老师建议完成下一次练习"
+    },
+    {
+      "id": "evaluationRetry",
+      "lane": "exception",
+      "col": 3,
+      "type": "security",
+      "label": "评测暂时失败",
+      "sublabel": "录音已保存，可稍后重试"
+    }
+  ],
+  "edges": [
+    { "id": "loginToLesson", "from": "registerLogin", "to": "chooseLesson", "role": "main" },
+    { "id": "lessonToRecord", "from": "chooseLesson", "to": "recordReading", "role": "main" },
+    { "id": "recordToSave", "from": "recordReading", "to": "saveRecording", "label": "停止录音", "variant": "emphasis", "role": "main" },
+    { "id": "saveToEvaluate", "from": "saveRecording", "to": "evaluateReading", "label": "提交评测", "variant": "emphasis", "role": "main" },
+    { "id": "evaluateToFeedback", "from": "evaluateReading", "to": "showFeedback", "label": "落库后展示", "variant": "emphasis", "role": "main" },
+    { "id": "feedbackToDashboard", "from": "showFeedback", "to": "teacherDashboard", "label": "老师可见", "role": "main" },
+    { "id": "dashboardToReview", "from": "teacherDashboard", "to": "teacherReview", "role": "main" },
+    { "id": "reviewToPractice", "from": "teacherReview", "to": "practiceAgain", "label": "给出练习重点", "variant": "dashed", "role": "main" },
+    { "id": "retryLoop", "from": "practiceAgain", "to": "chooseLesson", "label": "开始下一轮", "variant": "dashed", "role": "return", "route": "bottom-channel" },
+    { "id": "evaluationFailure", "from": "evaluateReading", "to": "evaluationRetry", "label": "网络或服务异常", "variant": "security", "role": "error" },
+    { "id": "retryEvaluation", "from": "evaluationRetry", "to": "evaluateReading", "label": "使用已存录音重试", "variant": "dashed", "role": "return" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "学生看到的结果",
+      "items": [
+        "三维星级与鼓励式评语",
+        "明确指出问题字句，并能回听自己的原声",
+        "每篇课文保留最新结果，也能查看历史进步"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "老师看到的结果",
+      "items": [
+        "按班级、学生、课文查看完成情况",
+        "回放完整录音和有问题的片段",
+        "看出学生在哪个维度持续薄弱"
+      ]
+    }
+  ]
+}

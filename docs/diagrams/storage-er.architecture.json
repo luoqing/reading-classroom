@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "朗读小屋·教学版 数据实体关系",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [1360, 860]
+  },
+  "components": [
+    {
+      "id": "userAccount",
+      "type": "security",
+      "label": "用户账号",
+      "sublabel": "学生 / 老师 · 登录身份",
+      "pos": [70, 350],
+      "size": [210, 84]
+    },
+    {
+      "id": "userSession",
+      "type": "security",
+      "label": "登录会话",
+      "sublabel": "令牌摘要 · 到期 / 撤销",
+      "pos": [70, 100],
+      "size": [210, 84]
+    },
+    {
+      "id": "lesson",
+      "type": "database",
+      "label": "课文",
+      "sublabel": "正文 · 拼音 · 规则 · 原生资源",
+      "pos": [450, 100],
+      "size": [230, 84]
+    },
+    {
+      "id": "lessonPage",
+      "type": "database",
+      "label": "课文页",
+      "sublabel": "插画 · 分页文字 · 逐页示范",
+      "pos": [840, 100],
+      "size": [230, 84]
+    },
+    {
+      "id": "readingAttempt",
+      "type": "database",
+      "label": "一次朗读",
+      "sublabel": "完整录音 · 模式 · 课文版本",
+      "pos": [450, 350],
+      "size": [230, 84]
+    },
+    {
+      "id": "readingClip",
+      "type": "database",
+      "label": "逐页录音",
+      "sublabel": "封面 / 正文页 · 顺序 · 时长",
+      "pos": [840, 350],
+      "size": [230, 84]
+    },
+    {
+      "id": "readingEvaluation",
+      "type": "database",
+      "label": "评测结果",
+      "sublabel": "讯飞原始结果 · 三维星级 · 问题片段",
+      "pos": [840, 610],
+      "size": [230, 84]
+    },
+    {
+      "id": "studentProgress",
+      "type": "database",
+      "label": "学生课文进度",
+      "sublabel": "最新朗读 / 评测 ID · 练习次数",
+      "pos": [70, 610],
+      "size": [230, 84]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "账号与权限",
+      "wraps": ["userAccount", "userSession"],
+      "pad": 28
+    },
+    {
+      "kind": "region",
+      "label": "教学内容",
+      "wraps": ["lesson", "lessonPage"],
+      "pad": 28
+    },
+    {
+      "kind": "region",
+      "label": "学习档案",
+      "wraps": ["readingAttempt", "readingClip", "readingEvaluation", "studentProgress"],
+      "pad": 28
+    }
+  ],
+  "connections": [
+    {
+      "id": "accountSessions",
+      "from": "userAccount",
+      "to": "userSession",
+      "label": "1 对多 · 登录设备",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "studentAttempts",
+      "from": "userAccount",
+      "to": "readingAttempt",
+      "label": "学生 1 对多",
+      "variant": "emphasis"
+    },
+    {
+      "id": "lessonPages",
+      "from": "lesson",
+      "to": "lessonPage",
+      "label": "1 对多 · 有序分页"
+    },
+    {
+      "id": "lessonAttempts",
+      "from": "lesson",
+      "to": "readingAttempt",
+      "label": "课文 1 对多",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "attemptClips",
+      "from": "readingAttempt",
+      "to": "readingClip",
+      "label": "1 对多 · 配音片段"
+    },
+    {
+      "id": "pageClip",
+      "from": "lessonPage",
+      "to": "readingClip",
+      "label": "页面 1 对多",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "attemptEvaluations",
+      "from": "readingAttempt",
+      "to": "readingEvaluation",
+      "label": "1 对多 · 可重新评测",
+      "variant": "emphasis"
+    },
+    {
+      "id": "accountProgress",
+      "from": "userAccount",
+      "to": "studentProgress",
+      "label": "学生 1 对多",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "lessonProgress",
+      "from": "lesson",
+      "to": "studentProgress",
+      "label": "课文 1 对多",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "via": [[565, 40], [1320, 40], [1320, 760], [185, 760]]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "保存原则",
+      "items": [
+        "每次朗读保留历史，不覆盖旧记录",
+        "学生 × 课文只维护一条最新进度索引",
+        "视频成片可重新合成，暂不重复存储"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "评测证据",
+      "items": [
+        "保存讯飞 SID、原始 XML 和算法版本",
+        "保存读准确、读自然、读到位三维结果",
+        "保存问题字句及原声回放时间段"
+      ]
+    }
+  ]
+}

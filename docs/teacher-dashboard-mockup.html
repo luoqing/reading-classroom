@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>朗读小屋·教学版｜老师工作台原型</title>
+  <style>
+    :root{
+      --ink:#203e32;--ink-2:#516157;--muted:#7c8277;--paper:#fffdf5;--cream:#f4eddc;
+      --cream-2:#ebe1ca;--green:#214f3e;--green-2:#6f8a72;--orange:#c37832;--gold:#d4a33f;
+      --line:#e3d8bf;--good:#467353;--warn:#b66b2b;--soft-green:#e9efdf;--soft-orange:#f6e7d5;
+      --shadow:0 14px 44px rgba(61,49,20,.08)
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:#efe7d4;color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;background:
+      radial-gradient(circle at 7% 0%,rgba(226,175,77,.22),transparent 35%),
+      radial-gradient(circle at 95% 52%,rgba(86,117,84,.13),transparent 36%),
+      linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px),
+      linear-gradient(rgba(255,255,255,.12) 1px,transparent 1px);background-size:auto,auto,34px 34px,34px 34px}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .app{position:relative;display:grid;grid-template-columns:230px minmax(0,1fr);min-height:100vh}
+    .sidebar{position:sticky;top:0;height:100vh;padding:30px 20px 24px;background:rgba(250,246,235,.92);border-right:1px solid var(--line);backdrop-filter:blur(18px);display:flex;flex-direction:column}
+    .brand{display:flex;align-items:center;gap:12px;padding:0 8px 26px}
+    .brand-mark{display:grid;place-items:center;width:43px;height:48px;border-radius:17px 5px 17px 5px;background:var(--green);color:#fff;font:700 25px "Songti SC",serif;box-shadow:0 7px 18px rgba(33,79,62,.18)}
+    .brand strong{display:block;font:700 21px "Songti SC",serif;letter-spacing:1px}
+    .brand small{display:block;margin-top:3px;color:#8b8a78;font-size:9px;letter-spacing:1.8px}
+    .role{margin:0 7px 25px;padding:12px 13px;border:1px solid #e2d4b7;border-radius:13px;background:#fffaf0;color:#78684f;font-size:12px;line-height:1.6}
+    .role b{display:block;color:var(--green);font-size:13px}
+    .nav{display:flex;flex-direction:column;gap:7px}
+    .nav button{display:flex;align-items:center;gap:11px;width:100%;height:46px;padding:0 13px;border:0;border-radius:12px;background:transparent;color:#667067;text-align:left;font-size:13px}
+    .nav button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
+    .nav button.active{background:var(--green);color:#fff;box-shadow:0 8px 24px rgba(33,79,62,.16)}
+    .nav button:not(.active):hover{background:#eee8d8;color:var(--green)}
+    .sidebar-tip{margin-top:auto;padding:16px 13px;border-top:1px solid var(--line);color:#8a8979;font-size:11px;line-height:1.8}
+    .profile{display:flex;align-items:center;gap:10px;margin-top:16px;padding:10px;border-radius:13px;background:#fffaf0;border:1px solid var(--line)}
+    .avatar{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#e2ead8;color:var(--green);font:700 15px "Songti SC",serif}
+    .profile strong,.profile small{display:block}.profile strong{font-size:12px}.profile small{font-size:10px;color:var(--muted);margin-top:2px}
+    main{padding:27px 30px 42px;min-width:0}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:23px}
+    .greeting span{display:block;margin-bottom:4px;color:var(--green-2);font-size:11px;letter-spacing:2px}
+    .greeting h1{margin:0;font:700 29px "Songti SC",serif;letter-spacing:1px}
+    .top-actions{display:flex;align-items:center;gap:10px}
+    .date-chip,.outline-button{height:42px;padding:0 15px;border:1px solid var(--line);border-radius:21px;background:rgba(255,253,245,.8);color:#667067;font-size:12px}
+    .outline-button{display:flex;align-items:center;gap:7px}.outline-button svg{width:15px;stroke:currentColor;fill:none}
+    .hero{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:22px;min-height:124px;padding:25px 29px;margin-bottom:18px;border:1px solid #ddcfaf;border-radius:22px;background:linear-gradient(112deg,#fff9e9 0%,#eee3c7 62%,#dde5d4 100%);box-shadow:var(--shadow)}
+    .hero:after{content:"";position:absolute;right:-55px;top:-92px;width:290px;height:290px;border:46px solid rgba(255,255,255,.34);border-radius:50%}
+    .hero h2{position:relative;margin:0 0 8px;font:700 22px "Songti SC",serif}.hero p{position:relative;margin:0;color:#6d756a;font-size:12px;line-height:1.7}
+    .hero-focus{position:relative;z-index:1;display:flex;align-items:center;gap:12px;min-width:330px;padding:13px 16px;border-radius:15px;background:rgba(255,253,246,.72);border:1px solid rgba(210,193,155,.7)}
+    .focus-ring{position:relative;display:grid;place-items:center;width:62px;height:62px;border-radius:50%;background:conic-gradient(var(--orange) 0 72%,#e8deca 72%)}
+    .focus-ring:after{content:"";width:46px;height:46px;border-radius:50%;background:#fffaf0}
+    .focus-ring b{position:absolute;z-index:1;font:700 16px Georgia,serif;color:var(--orange)}
+    .hero-focus strong{display:block;font-size:13px}.hero-focus small{display:block;margin-top:4px;color:#837b6c;font-size:10px;line-height:1.5}
+    .toolbar{display:flex;align-items:center;gap:9px;margin-bottom:16px}
+    .search{position:relative;flex:1;max-width:310px}.search svg{position:absolute;left:13px;top:12px;width:16px;stroke:#889088;fill:none}.search input{width:100%;height:42px;padding:0 14px 0 39px;border:1px solid var(--line);border-radius:12px;background:rgba(255,253,245,.86);outline:none;color:var(--ink)}
+    select{height:42px;padding:0 34px 0 13px;border:1px solid var(--line);border-radius:12px;background:#fffdf5;color:#647066;font-size:12px;outline:none}
+    .subtle{margin-left:auto;color:#929183;font-size:10px}
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:17px}
+    .kpi{position:relative;overflow:hidden;padding:17px 18px;border:1px solid var(--line);border-radius:17px;background:rgba(255,253,245,.9);box-shadow:0 8px 24px rgba(58,48,20,.05)}
+    .kpi:before{content:"";position:absolute;right:-13px;top:-18px;width:62px;height:62px;border-radius:50%;background:var(--glow,#e9efdf)}
+    .kpi span{display:block;color:#7d837a;font-size:11px}.kpi strong{display:inline-block;margin-top:8px;font:700 27px Georgia,"Songti SC",serif;color:var(--green)}.kpi em{margin-left:6px;color:#8a887c;font-size:10px;font-style:normal}
+    .content-grid{display:grid;grid-template-columns:minmax(650px,1.7fr) minmax(290px,.72fr);gap:17px;align-items:start}
+    .panel{border:1px solid var(--line);border-radius:20px;background:rgba(255,253,245,.92);box-shadow:var(--shadow)}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:18px 20px 13px;border-bottom:1px solid #eee6d4}
+    .panel-head h3{margin:0;font:700 17px "Songti SC",serif}.panel-head p{margin:4px 0 0;color:#8a8a7c;font-size:10px}.text-button{border:0;background:transparent;color:var(--green);font-size:11px}
+    .dimension-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:14px 20px;border-bottom:1px solid #eee6d4}
+    .dim{padding:11px 12px;border-radius:12px;background:#f1eddf}.dim.warn{background:#f5e6d5}.dim-top{display:flex;justify-content:space-between;gap:6px;font-size:11px}.dim-top b{font-family:Georgia,serif;color:var(--green)}.dim.warn .dim-top b{color:var(--warn)}.bar{height:5px;margin-top:9px;border-radius:8px;background:#ded8c8;overflow:hidden}.bar i{display:block;height:100%;width:var(--value);border-radius:inherit;background:var(--green-2)}.dim.warn .bar i{background:var(--orange)}
+    table{width:100%;border-collapse:collapse;table-layout:fixed}th{text-align:left;padding:11px 12px;color:#929185;font-size:10px;font-weight:500;background:#faf6eb}td{padding:12px;border-top:1px solid #eee7d7;font-size:11px;color:#5d685f;vertical-align:middle}tbody tr{transition:.18s ease}tbody tr:hover,tbody tr.selected{background:#f2f0e2}tbody tr{cursor:pointer}
+    .student{display:flex;align-items:center;gap:9px}.student-avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--tone,#e2ead8);color:var(--green);font:700 12px "Songti SC",serif}.student strong{display:block;color:var(--ink);font-size:12px}.student small{display:block;color:#99988b;font-size:9px;margin-top:2px}.stars{color:var(--gold);letter-spacing:1px;white-space:nowrap}.weak{display:inline-flex;align-items:center;gap:5px;padding:4px 7px;border-radius:10px;background:#f5e6d5;color:#9a5d2b;font-size:9px}.okay{background:#e8efdf;color:#467353}.play{display:grid;place-items:center;width:31px;height:31px;border:1px solid #d9cfb9;border-radius:50%;background:#fffaf0;color:var(--green)}.play svg{width:13px;fill:currentColor}.play.playing{background:var(--green);color:#fff}
+    .right-stack{display:grid;gap:17px}.detail{padding:20px}.detail-top{display:flex;align-items:center;gap:12px}.detail-avatar{display:grid;place-items:center;width:52px;height:52px;border-radius:18px;background:linear-gradient(145deg,#e4ecd9,#d4dfc9);font:700 21px "Songti SC",serif}.detail h3{margin:0;font:700 18px "Songti SC",serif}.detail small{color:#86877b;font-size:10px}.status-badge{margin-left:auto;padding:5px 8px;border-radius:12px;background:#f6e6d3;color:#a35f29;font-size:9px}.latest{margin:16px 0;padding:13px;border-radius:14px;background:#f3eee1}.latest-title{display:flex;justify-content:space-between;gap:10px}.latest-title strong{font-size:12px}.latest-title span{color:#8e8b80;font-size:9px}.score-row{display:grid;grid-template-columns:74px 1fr 34px;gap:8px;align-items:center;margin-top:11px;font-size:10px}.score-row b{text-align:right;color:var(--green);font-family:Georgia,serif}.score-track{height:7px;border-radius:10px;background:#ddd7c7;overflow:hidden}.score-track i{display:block;width:var(--value);height:100%;border-radius:inherit;background:var(--color,var(--green-2))}.issue-box{padding:12px;border-left:3px solid var(--orange);border-radius:3px 12px 12px 3px;background:#fff3e4}.issue-box strong{display:block;font-size:11px}.issue-box p{margin:5px 0 0;color:#806952;font-size:10px;line-height:1.6}.detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}.detail-actions button{height:40px;border-radius:20px;border:1px solid var(--line);background:#fffaf0;color:var(--green);font-size:11px}.detail-actions .primary{border-color:var(--green);background:var(--green);color:#fff}
+    .attention-list{padding:8px 18px 14px}.attention-item{display:grid;grid-template-columns:auto 1fr auto;gap:9px;align-items:center;padding:10px 0;border-bottom:1px solid #eee7d7}.attention-item:last-child{border:0}.mini-avatar{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:#eee7d7;font:700 11px "Songti SC",serif}.attention-item strong{display:block;font-size:11px}.attention-item small{display:block;margin-top:2px;color:#939186;font-size:9px}.attention-item span{color:#ad6228;font-size:9px}
+    .prototype-note{position:fixed;right:16px;bottom:15px;padding:7px 11px;border-radius:14px;background:rgba(32,62,50,.88);color:#fff;font-size:9px;letter-spacing:.3px;box-shadow:0 5px 18px rgba(32,62,50,.2)}
+    @media(max-width:1120px){.app{grid-template-columns:190px minmax(0,1fr)}.content-grid{grid-template-columns:1fr}.right-stack{grid-template-columns:1fr 1fr}.hero-focus{min-width:290px}.kpis{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:760px){.app{display:block}.sidebar{position:relative;width:100%;height:auto}.nav{display:grid;grid-template-columns:repeat(2,1fr)}main{padding:18px}.hero{display:block}.hero-focus{margin-top:16px;min-width:0}.toolbar{flex-wrap:wrap}.search{max-width:none;flex-basis:100%}.content-grid,.right-stack{display:block}.panel{margin-bottom:14px}.table-wrap{overflow:auto}table{min-width:780px}.kpis{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">叶</span><div><strong>朗读小屋</strong><small>TEACHER DESK</small></div></div>
+      <div class="role"><b>教学版 · 老师工作台</b>登录后只展示有权限查看的学生数据</div>
+      <nav class="nav" aria-label="老师工作台导航">
+        <button class="active"><svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>学情总览</button>
+        <button><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>学生档案</button>
+        <button><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4v15.5M6.5 3H20v14H6.5A2.5 2.5 0 0 0 4 19.5V5.5A2.5 2.5 0 0 1 6.5 3Z"/></svg>课文管理</button>
+        <button><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1v.1h-4V21a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1-.4h-.1v-4H3a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1v-.1h4V3a1.7 1.7 0 0 0 1.1 1.6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.14.37.35.7.6 1 .28.25.63.39 1 .4h.1v4H21a1.7 1.7 0 0 0-1.6.6Z"/></svg>账号管理</button>
+      </nav>
+      <div class="sidebar-tip">先看谁需要帮助，再点进学生详情听原声，不用逐条翻记录。</div>
+      <div class="profile"><span class="avatar">罗</span><div><strong>罗老师</strong><small>管理员账号</small></div></div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div class="greeting"><span>朗读教学概览</span><h1>早上好，罗老师</h1></div>
+        <div class="top-actions"><span class="date-chip">2026 年 10 月 17 日</span><button class="outline-button"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>添加学生</button></div>
+      </header>
+
+      <section class="hero">
+        <div><h2>先看需要帮助的孩子</h2><p>本周 27 位学生完成了《秋天》朗读。系统发现“读到位”是全班最需要练习的部分，<br/>主要集中在“一”的变调和轻声“了”。</p></div>
+        <div class="hero-focus"><span class="focus-ring"><b>72%</b></span><div><strong>本周练习完成率</strong><small>32 人中有 5 人还没有提交<br/>8 人有明确的练习重点</small></div></div>
+      </section>
+
+      <div class="toolbar">
+        <label class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="search" placeholder="搜索学生姓名或学号" /></label>
+        <select aria-label="班级"><option>一年级 3 班</option><option>全部班级</option></select>
+        <select aria-label="课文"><option>《秋天》</option><option>全部课文</option></select>
+        <select aria-label="时间"><option>最近 7 天</option><option>最近 30 天</option></select>
+        <span class="subtle">以下为 UI 原型示意数据</span>
+      </div>
+
+      <section class="kpis">
+        <article class="kpi"><span>班级学生</span><strong>32</strong><em>人</em></article>
+        <article class="kpi" style="--glow:#f4ead5"><span>本周已练</span><strong>27</strong><em>完成率 84%</em></article>
+        <article class="kpi"><span>平均练习次数</span><strong>2.4</strong><em>次 / 人</em></article>
+        <article class="kpi" style="--glow:#f6e1ce"><span>建议重点关注</span><strong style="color:var(--orange)">8</strong><em>人</em></article>
+      </section>
+
+      <div class="content-grid">
+        <section class="panel">
+          <div class="panel-head"><div><h3>学生朗读情况</h3><p>默认按“最需要帮助”排序，可直接回放最新录音</p></div><button class="text-button">导出本周记录 →</button></div>
+          <div class="dimension-strip">
+            <div class="dim"><div class="dim-top"><span>读准确</span><b>2.6 / 3</b></div><div class="bar"><i style="--value:87%"></i></div></div>
+            <div class="dim"><div class="dim-top"><span>读自然</span><b>2.4 / 3</b></div><div class="bar"><i style="--value:80%"></i></div></div>
+            <div class="dim warn"><div class="dim-top"><span>读到位 · 薄弱项</span><b>1.9 / 3</b></div><div class="bar"><i style="--value:63%"></i></div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th style="width:22%">学生</th><th style="width:14%">最新课文</th><th style="width:14%">读准确</th><th style="width:14%">读自然</th><th style="width:14%">读到位</th><th style="width:14%">最近练习</th><th style="width:8%">原声</th></tr></thead>
+              <tbody id="studentRows">
+                <tr class="selected" data-name="林一诺" data-index="0"><td><div class="student"><span class="student-avatar">林</span><div><strong>林一诺</strong><small>学号 10308</small></div></div></td><td>《秋天》</td><td><span class="stars">★★★</span></td><td><span class="stars">★★☆</span></td><td><span class="weak">★☆☆ 需练习</span></td><td>今天 09:12</td><td><button class="play" aria-label="播放林一诺的录音"><svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></svg></button></td></tr>
+                <tr data-name="陈子涵" data-index="1"><td><div class="student"><span class="student-avatar" style="--tone:#eee4cf">陈</span><div><strong>陈子涵</strong><small>学号 10312</small></div></div></td><td>《秋天》</td><td><span class="stars">★★☆</span></td><td><span class="weak">★☆☆ 需练习</span></td><td><span class="stars">★★☆</span></td><td>昨天 20:43</td><td><button class="play" aria-label="播放陈子涵的录音"><svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></svg></button></td></tr>
+                <tr data-name="王梓轩" data-index="2"><td><div class="student"><span class="student-avatar" style="--tone:#e4e6d6">王</span><div><strong>王梓轩</strong><small>学号 10315</small></div></div></td><td>《秋天》</td><td><span class="weak">★☆☆ 需练习</span></td><td><span class="stars">★★☆</span></td><td><span class="stars">★★☆</span></td><td>昨天 19:06</td><td><button class="play" aria-label="播放王梓轩的录音"><svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></svg></button></td></tr>
+                <tr data-name="李沐阳" data-index="3"><td><div class="student"><span class="student-avatar" style="--tone:#e0e8e8">李</span><div><strong>李沐阳</strong><small>学号 10317</small></div></div></td><td>《秋天》</td><td><span class="stars">★★★</span></td><td><span class="stars">★★★</span></td><td><span class="stars">★★☆</span></td><td>10 月 15 日</td><td><button class="play" aria-label="播放李沐阳的录音"><svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></svg></button></td></tr>
+                <tr data-name="周予安" data-index="4"><td><div class="student"><span class="student-avatar" style="--tone:#eee2dd">周</span><div><strong>周予安</strong><small>学号 10321</small></div></div></td><td>《秋天》</td><td><span class="stars">★★★</span></td><td><span class="stars">★★★</span></td><td><span class="okay weak">★★★ 很稳定</span></td><td>10 月 14 日</td><td><button class="play" aria-label="播放周予安的录音"><svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></svg></button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="right-stack">
+          <section class="panel detail" id="detailCard">
+            <div class="detail-top"><span class="detail-avatar" id="detailAvatar">林</span><div><h3 id="detailName">林一诺</h3><small>一年级 3 班 · 学号 10308</small></div><span class="status-badge">建议关注</span></div>
+            <div class="latest"><div class="latest-title"><strong>《秋天》最新一次</strong><span>今天 09:12 · 第 3 次</span></div>
+              <div class="score-row"><span>读准确</span><span class="score-track"><i style="--value:92%"></i></span><b>3★</b></div>
+              <div class="score-row"><span>读自然</span><span class="score-track"><i style="--value:72%;--color:#7f9875"></i></span><b>2★</b></div>
+              <div class="score-row"><span>读到位</span><span class="score-track"><i style="--value:38%;--color:#c37832"></i></span><b style="color:var(--orange)">1★</b></div>
+            </div>
+            <div class="issue-box"><strong>这次最值得再练</strong><p>“一群”中的“一”应读四声；“秋天来了”的“了”要读得轻、短。可直接回听对应句子。</p></div>
+            <div class="detail-actions"><button class="primary" id="detailPlay">▷ 回放最新录音</button><button>查看完整档案</button></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><div><h3>本周需关注</h3><p>连续两次出现同一薄弱项</p></div><button class="text-button">查看全部</button></div>
+            <div class="attention-list">
+              <div class="attention-item"><span class="mini-avatar">陈</span><div><strong>陈子涵</strong><small>断句和节奏 · 连续 2 次</small></div><span>读自然</span></div>
+              <div class="attention-item"><span class="mini-avatar">王</span><div><strong>王梓轩</strong><small>“黄、片”字音 · 连续 2 次</small></div><span>读准确</span></div>
+              <div class="attention-item"><span class="mini-avatar">林</span><div><strong>林一诺</strong><small>“一”变调和轻声“了”</small></div><span>读到位</span></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <div class="prototype-note">老师后台 UI 原型 · 数据为示意</div>
+  <script>
+    const names=['林一诺','陈子涵','王梓轩','李沐阳','周予安'];
+    document.getElementById('studentRows').addEventListener('click',event=>{
+      const play=event.target.closest('.play');
+      if(play){document.querySelectorAll('.play').forEach(item=>{if(item!==play)item.classList.remove('playing')});play.classList.toggle('playing');return;}
+      const row=event.target.closest('tr');if(!row)return;
+      document.querySelectorAll('#studentRows tr').forEach(item=>item.classList.remove('selected'));row.classList.add('selected');
+      document.getElementById('detailName').textContent=row.dataset.name;document.getElementById('detailAvatar').textContent=row.dataset.name.slice(0,1);
+    });
+    document.getElementById('search').addEventListener('input',event=>{
+      const query=event.target.value.trim();document.querySelectorAll('#studentRows tr').forEach(row=>row.hidden=query&&!row.dataset.name.includes(query));
+    });
+    document.getElementById('detailPlay').addEventListener('click',event=>{const playing=event.currentTarget.dataset.playing==='1';event.currentTarget.dataset.playing=playing?'0':'1';event.currentTarget.textContent=playing?'▷ 回放最新录音':'Ⅱ 暂停回放';});
+  </script>
+</body>
+</html>
