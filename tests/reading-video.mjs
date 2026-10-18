@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildAutumnVideoTimeline,
   buildDubbingTimeline,
+  lessonHasDubbingMedia,
   renderAutumnDubbingScript,
 } from '../client/src/pages/reading/video-preview.js';
 import { renderPageDubbingScript } from '../client/src/pages/reading/page-dubbing.js';
@@ -73,6 +74,15 @@ test('picture-book dubbing can show or hide first-grade pinyin', () => {
   assert.match(withPinyin, /<ruby>会儿<rt>huìr<\/rt><\/ruby>/u);
   assert.match(withPinyin, /<ruby>一<rt>yí<\/rt><\/ruby>/u);
   assert.equal(withoutPinyin, '一会儿排成个“人”字，');
+});
+
+test('Autumn keeps its picture-book dubbing entry when its pages use the video master', () => {
+  assert.equal(lessonHasDubbingMedia({ id: 'autumn', pages: [] }), true);
+  assert.equal(lessonHasDubbingMedia({ id: 'house', pages: [] }), false);
+  assert.equal(lessonHasDubbingMedia({
+    id: 'house',
+    pages: [{ pageType: 'body', illustrationUrl: 'https://example.com/page.jpg' }],
+  }), true);
 });
 
 test('a teacher-published page can render its own first-grade pinyin', () => {

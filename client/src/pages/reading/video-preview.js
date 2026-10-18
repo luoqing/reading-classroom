@@ -57,6 +57,11 @@ export const AUTUMN_DEMO_SOURCE = readingAssets.fullDemo;
 export const AUTUMN_COVER_DEMO_SOURCE = readingAssets.coverDemo;
 export const AUTUMN_DEMO_SOURCES = readingAssets.sceneDemos;
 
+export function lessonHasDubbingMedia(lesson) {
+  if (lesson?.id === 'autumn') return Boolean(lesson.videoTemplateUrl || AUTUMN_VIDEO_SOURCE);
+  return Boolean(lesson?.pages?.some(page => page.pageType !== 'cover' && page.illustrationUrl));
+}
+
 export function buildAutumnVideoTimeline({ words, aligned }) {
   if (!aligned || !Array.isArray(words) || !words.length) return [];
   let position = 0;
