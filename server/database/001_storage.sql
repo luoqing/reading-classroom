@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS lesson (
 );
 
 COMMENT ON COLUMN lesson.pinyin_json IS '@type { paragraphs: string[] }';
-COMMENT ON COLUMN lesson.rubric_json IS '@type { accuracyTargets: { char: string; reading: string }[]; natural: { kind: string; description: string }; delivery: { yiTargets: { label: string; tone: number; reading: string }[]; neutralTargets: string[] }; thresholds: { normalPhoneLevel: number; targetPhoneLevel: number } }';
+COMMENT ON COLUMN lesson.rubric_json IS '@type { accuracyTargets: { char: string; reading: string }[]; natural: { kind: string; description: string; neutralTargets?: string[] }; delivery: { kind?: string; description?: string; yiTargets?: { label: string; tone: number; reading: string }[] }; thresholds: { normalPhoneLevel: number; targetPhoneLevel: number } }';
 CREATE UNIQUE INDEX IF NOT EXISTS uk_lesson_slug ON lesson (slug);
 CREATE INDEX IF NOT EXISTS idx_lesson_status ON lesson (status);
 

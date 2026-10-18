@@ -143,7 +143,8 @@ function neutralGoal(words, labels = []) {
   };
 }
 
-function naturalGoal(text, words, aligned) {
+function naturalGoal(text, words, aligned, natural) {
+  if (natural?.neutralTargets?.length) return neutralGoal(words, natural.neutralTargets);
   return buildRhythmGoal({ text, words, aligned });
 }
 
@@ -161,10 +162,9 @@ function deliveryGoal(words, delivery) {
     const passed = reliable && (hasContour ? contourMatches : measured.tone === target.tone);
     return { ...target, word, measured, passed };
   });
-  const neutral = neutralGoal(words, delivery?.neutralTargets || []);
   const passedYi = yiResults.filter(result => result.passed);
-  const passedCount = passedYi.length + neutral.passedCount;
-  const totalCount = yiResults.length + neutral.totalCount;
+  const passedCount = passedYi.length;
+  const totalCount = yiResults.length;
   const yiIssues = yiResults
     .filter(result => !result.passed && result.word)
     .map(result => timedIssue(result.word, `${result.label}的“一”声调需再听（目标${['', '一声', '二声', '三声', '四声'][result.tone] || ''} ${result.reading}）`))
@@ -172,12 +172,12 @@ function deliveryGoal(words, delivery) {
   const failedYi = yiResults.filter(result => !result.passed);
   return {
     stars: starFromRatio(passedCount, totalCount),
-    count: `${passedCount}/${totalCount}处轻声与变调`,
-    good: passedCount ? `AI确认 ${passedYi.length} 处“一”的变调、${neutral.passedCount} 处轻声读到位` : '这次先不着急，跟着示范读一遍',
-    practice: failedYi.length || neutral.passedCount < neutral.totalCount
-      ? `再练：${failedYi.map(result => `${result.label}读${['', '一声', '二声', '三声', '四声'][result.tone] || ''} ${result.reading}`).join('、')}${failedYi.length && neutral.passedCount < neutral.totalCount ? '；' : ''}${neutral.passedCount < neutral.totalCount ? neutral.practice.replace(/^再练：/u, '') : ''}`
-      : `${yiTargets.length}处“一”的声调和${neutral.totalCount}处轻声均读到位`,
-    issues: [...yiIssues, ...neutral.issues],
+    count: `${passedCount}/${totalCount}处“一”的变调`,
+    good: passedCount ? `AI确认 ${passedYi.length} 处“一”的变调读到位` : '这次先不着急，跟着示范读一遍',
+    practice: failedYi.length
+      ? `再练：${failedYi.map(result => `${result.label}读${['', '一声', '二声', '三声', '四声'][result.tone] || ''} ${result.reading}`).join('、')}`
+      : `${yiTargets.length}处“一”的声调均读到位`,
+    issues: yiIssues,
     passedCount,
     totalCount,
   };
@@ -200,9 +200,9 @@ export function buildLessonGoals({ words, scores, aligned, text, confidentIssues
   const accuracyTargets = rubric?.accuracyTargets || [];
   if (accuracyTargets.length && aligned) {
     const accuracy = accuracyGoal(words, confidentIssues, accuracyTargets);
-    const natural = naturalGoal(text, words, aligned);
+    const natural = naturalGoal(text, words, aligned, rubric?.natural);
     const deliveryRubric = rubric?.delivery || {};
-    const hasSoundTargets = (deliveryRubric.yiTargets?.length || 0) + (deliveryRubric.neutralTargets?.length || 0) > 0;
+    const hasSoundTargets = (deliveryRubric.yiTargets?.length || 0) > 0;
     const delivery = hasSoundTargets ? deliveryGoal(words, deliveryRubric) : expressionGoal(scores.tone_score, deliveryRubric, aligned);
     return { targeted: true, accuracy, natural, delivery, issues: [...accuracy.issues, ...natural.issues, ...delivery.issues] };
   }

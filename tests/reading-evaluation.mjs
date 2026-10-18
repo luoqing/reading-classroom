@@ -31,6 +31,10 @@ const autumnRubric = {
     { char: '秋', reading: 'qiū' },
     { char: '气', reading: 'qì' },
   ],
+  natural: {
+    description: '把三处轻声“了”读得轻、短',
+    neutralTargets: ['天气凉了', '树叶黄了', '秋天来了'],
+  },
   delivery: {
     yiTargets: [
       { label: '一片片', tone: 2, reading: 'yí' },
@@ -39,7 +43,6 @@ const autumnRubric = {
       { label: '第二处“一会儿”', tone: 2, reading: 'yí' },
       { label: '“一”字', tone: 1, reading: 'yī' },
     ],
-    neutralTargets: ['天气凉了', '树叶黄了', '秋天来了'],
   },
   thresholds: { normalPhoneLevel: 3, targetPhoneLevel: 2 },
 };
@@ -239,7 +242,7 @@ const deliveryWords = ({ tones = [2, 4, 2, 2, 1], leTones = [0, 0, 0], leDuratio
   return words;
 };
 
-test('Autumn delivery gives three stars when all five 一 tones and three neutral 了 are in place', () => {
+test('Autumn rates neutral 了 under natural and 一 tone changes under delivery', () => {
   const goals = buildLessonGoals({
     words: deliveryWords(),
     scores: {},
@@ -250,7 +253,9 @@ test('Autumn delivery gives three stars when all five 一 tones and three neutra
   });
 
   assert.equal(goals.delivery.stars, 3);
-  assert.equal(goals.delivery.count, '8/8处轻声与变调');
+  assert.equal(goals.natural.stars, 3);
+  assert.equal(goals.natural.count, '3/3处轻声');
+  assert.equal(goals.delivery.count, '5/5处“一”的变调');
   assert.equal(goals.delivery.issues.length, 0);
 });
 
@@ -269,7 +274,7 @@ test('Autumn delivery points to 一群 when its 一 is not fourth tone', () => {
   assert.match(goals.delivery.issues[0].labels.join(''), /一群.*四声/);
 });
 
-test('neutral 了 belongs to delivery instead of natural rhythm', () => {
+test('neutral 了 belongs to natural and punctuation pauses are ignored for Autumn', () => {
   const words = [
     word('天', 0),
     word('气', 1),
@@ -285,9 +290,9 @@ test('neutral 了 belongs to delivery instead of natural rhythm', () => {
     rubric: autumnRubric,
   });
 
-  assert.equal(goals.natural.stars, 3);
-  assert.equal(goals.delivery.stars, 2);
-  assert.match(goals.delivery.practice, /轻声“了”/);
+  assert.equal(goals.natural.stars, 2);
+  assert.equal(goals.delivery.stars, 3);
+  assert.match(goals.natural.practice, /轻声“了”/);
 });
 
 test('a lesson with its own rubric receives all three targeted ratings', () => {
@@ -366,7 +371,7 @@ test('spoken teacher comment covers accuracy, naturalness, and delivery in order
     'accuracy-3',
     'natural-2',
     'delivery-1',
-    'practice-delivery',
+    'practice-natural',
   ]);
   assert.ok(speechKeys.every(key => teacherSpeechClips[key]?.endsWith('.mp3')));
 });

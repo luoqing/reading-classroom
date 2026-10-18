@@ -142,6 +142,7 @@
   gap: 7px;
 }
 .teacher-top-actions > button { color: var(--teacher-green); font-weight: 800; }
+.teacher-top-actions > button.teacher-logout-button { border-color: #e7d4c7; background: #fff8f1; color: #955233; }
 
 .teacher-message {
   margin: 18px 0 0;
@@ -492,6 +493,28 @@
 .lesson-detail-stats small { color: #8a918a; }
 .lesson-detail-stats strong { font: 800 27px Georgia, serif; }
 .lesson-last-record { margin-top: 18px; padding: 12px; border-radius: 11px; background: #f5ead8; color: #765332!important; }
+.lesson-drawer { width: min(760px, 96vw); }
+.lesson-content-section { margin-top: 25px; }
+.lesson-content-section h3 { margin-bottom: 12px; }
+.lesson-copy-block { padding: 12px; border: 1px solid #e4dfd0; border-radius: 14px; background: white; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 16px; align-items: start; }
+.lesson-copy-block > img { width: 100%; aspect-ratio: 4 / 3; border-radius: 11px; object-fit: cover; }
+.lesson-full-text { margin: 0; color: var(--teacher-ink)!important; font-size: 15px; line-height: 2; white-space: pre-wrap; }
+.lesson-demo-audio { margin-top: 10px; padding: 12px; border-radius: 12px; background: #f0f3eb; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; color: var(--teacher-green); font-size: 12px; font-weight: 800; }
+.lesson-demo-audio audio,
+.lesson-material-page audio { width: 100%; height: 36px; }
+.lesson-page-list { display: grid; gap: 12px; }
+.lesson-material-page { padding: 12px; border: 1px solid #e3dfd1; border-radius: 16px; background: white; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 16px; align-items: start; }
+.lesson-material-page > img,
+.lesson-image-empty { width: 100%; aspect-ratio: 4 / 3; border-radius: 11px; object-fit: cover; background: #eeece3; }
+.lesson-image-empty { display: grid; place-items: center; color: #999f98; font-size: 11px; }
+.lesson-material-page > div > small { color: #8d948d; font-size: 10px; font-weight: 800; }
+.lesson-material-page > div > p:not(.lesson-page-pinyin) { margin: 9px 0; color: var(--teacher-ink); font-size: 14px; line-height: 1.8; }
+.lesson-page-pinyin { margin: 12px 0 4px; color: #9a7650; font: 11px/1.7 Georgia, serif; }
+.lesson-rubric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.lesson-rubric-grid article { padding: 14px; border-radius: 14px; background: #f0f3eb; }
+.lesson-rubric-grid strong { color: var(--teacher-green); }
+.lesson-rubric-grid p { margin: 8px 0 0; color: #647168; font-size: 11px; line-height: 1.7; }
+.lesson-thresholds { padding: 11px 13px; border-radius: 11px; background: #f7ead8; color: #765332!important; font-size: 11px; }
 
 .create-dialog { width: min(580px, calc(100vw - 32px)); max-height: 86vh; margin: auto; padding: 36px; overflow: auto; box-sizing: border-box; position: relative; border-radius: 24px; background: #faf8f0; }
 .create-dialog textarea { width: 100%; min-height: 190px; box-sizing: border-box; margin: 14px 0; padding: 13px; border: 1px solid #d8d8cf; border-radius: 12px; resize: vertical; background: white; line-height: 1.7; }
@@ -539,8 +562,9 @@
   .teacher-main { padding: 22px 14px 65px; }
   .teacher-topbar { align-items: flex-start; }
   .teacher-topbar h1 { font-size: 27px; }
+  .teacher-top-actions { flex-direction: column; align-items: stretch; gap: 6px; }
   .teacher-top-actions > span { display: none; }
-  .teacher-top-actions > button { min-height: 38px; padding: 0 11px; }
+  .teacher-top-actions > button { min-height: 38px; padding: 0 11px; justify-content: center; }
   .teacher-hero { padding: 22px; display: grid; }
   .completion-card { min-width: 0; }
   .teacher-filterbar,
@@ -564,6 +588,10 @@
   .account-row > div { flex-wrap: wrap; }
   .teacher-loading { left: 0; }
   .student-drawer { padding: 34px 22px; }
+  .lesson-copy-block,
+  .lesson-material-page { grid-template-columns: 1fr; }
+  .lesson-rubric-grid { grid-template-columns: 1fr; }
+  .lesson-demo-audio { grid-template-columns: 1fr; }
   .credential-row { grid-template-columns: 1fr; }
 }
 

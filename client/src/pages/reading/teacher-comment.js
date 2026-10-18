@@ -13,7 +13,8 @@ function dimensionComment(dimension, goal) {
 
 function issueDimension(issue) {
   const labels = issue?.labels?.join('') || '';
-  if (/声调|轻声|“一”/u.test(labels)) return 'delivery';
+  if (/轻声/u.test(labels)) return 'natural';
+  if (/声调|“一”/u.test(labels)) return 'delivery';
   if (/停顿|断句|节奏/u.test(labels)) return 'natural';
   if (/字音|漏读|增读|重复|替换/u.test(labels)) return 'accuracy';
   return null;

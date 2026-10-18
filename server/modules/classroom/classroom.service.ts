@@ -148,7 +148,8 @@ export class ClassroomService {
       .where(eq(userAccount.accountType, 'student'))
       .orderBy(userAccount.displayName);
     const lessonRows = await this.db.select().from(lesson).orderBy(asc(lesson.title));
-    const pageRows = await this.db.select({ lessonId: lessonPage.lessonId }).from(lessonPage);
+    const pageRows = await this.db.select().from(lessonPage)
+      .orderBy(asc(lessonPage.lessonId), asc(lessonPage.pageNo));
     const attemptRows = await this.db.select({
       attempt: readingAttempt,
       evaluation: readingEvaluation,
@@ -217,19 +218,34 @@ export class ClassroomService {
       [student.accuracyStars, student.naturalStars, student.deliveryStars].some(stars => stars !== null && stars < 2)
       || (student.issueCount || 0) > 0,
     ).length;
-    const pageCounts = new Map<string, number>();
-    pageRows.forEach(row => pageCounts.set(row.lessonId, (pageCounts.get(row.lessonId) || 0) + 1));
     const lessons = await Promise.all(lessonRows.map(async item => {
       const itemAttempts = uniqueAttempts.filter(row => row.lessonId === item.id);
+      const itemPages = pageRows.filter(page => page.lessonId === item.id);
       return {
         id: item.id,
         slug: item.slug,
         title: item.title,
         gradeLabel: item.gradeLabel,
+        fullText: item.fullText,
+        pinyin: item.pinyinJson as { paragraphs: string[] },
+        rubric: item.rubricJson as AdminDashboardResult['lessons'][number]['rubric'],
         revision: item.revision,
         coverUrl: await signedStorageObjectUrl(this.files, item.coverUrl),
+        fullDemoUrl: await signedStorageObjectUrl(this.files, item.fullDemoUrl),
+        videoTemplateUrl: await signedStorageObjectUrl(this.files, item.videoTemplateUrl),
+        pages: await Promise.all(itemPages.map(async page => ({
+          id: page.id,
+          pageNo: page.pageNo,
+          pageType: page.pageType,
+          text: page.textContent,
+          pinyin: page.pinyinJson as { text: string; pinyin: string }[],
+          illustrationUrl: await signedStorageObjectUrl(this.files, page.illustrationUrl),
+          demoAudioUrl: await signedStorageObjectUrl(this.files, page.demoAudioUrl),
+          videoStartMs: page.videoStartMs,
+          videoEndMs: page.videoEndMs,
+        }))),
         status: item.status,
-        pageCount: pageCounts.get(item.id) || 0,
+        pageCount: itemPages.length,
         attemptCount: itemAttempts.length,
         completedStudentCount: new Set(itemAttempts.map(row => row.attempt.studentId)).size,
         latestRecordedAt: itemAttempts[0]?.attempt.recordedAt.toISOString() || null,

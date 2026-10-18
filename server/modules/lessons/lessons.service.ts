@@ -39,7 +39,7 @@ export class LessonsService {
       gradeLabel: item.gradeLabel,
       fullText: item.fullText,
       pinyin: item.pinyinJson as { paragraphs: string[] },
-      rubric: item.rubricJson as Record<string, unknown>,
+      rubric: item.rubricJson as LessonView['rubric'],
       revision: item.revision,
       coverUrl: await signedStorageObjectUrl(this.files, item.coverUrl),
       fullDemoUrl: await signedStorageObjectUrl(this.files, item.fullDemoUrl),

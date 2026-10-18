@@ -319,7 +319,7 @@ export const lesson = pgTable("lesson", {
    */
   pinyinJson: jsonb("pinyin_json").notNull().default('[]'),
   /**
-   * @type { accuracyTargets: { char: string; reading: string }[]; natural: { kind: string; description: string }; delivery: { yiTargets: { label: string; tone: number; reading: string }[]; neutralTargets: string[] }; thresholds: { normalPhoneLevel: number; targetPhoneLevel: number } }
+   * @type { accuracyTargets: { char: string; reading: string }[]; natural: { kind: string; description: string; neutralTargets?: string[] }; delivery: { kind?: string; description?: string; yiTargets?: { label: string; tone: number; reading: string }[] }; thresholds: { normalPhoneLevel: number; targetPhoneLevel: number } }
    */
   rubricJson: jsonb("rubric_json").notNull().default('{}'),
   revision: integer("revision").notNull().default(1),

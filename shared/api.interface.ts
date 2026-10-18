@@ -40,6 +40,26 @@ export interface LessonListItem {
   coverUrl: string | null;
 }
 
+export interface LessonRubric {
+  accuracyTargets?: { char: string; reading: string }[];
+  natural?: {
+    kind?: string;
+    description?: string;
+    neutralTargets?: string[];
+  };
+  delivery?: {
+    kind?: string;
+    description?: string;
+    yiTargets?: { label: string; tone: number; reading: string }[];
+    focusTargets?: string[];
+  };
+  thresholds?: {
+    normalPhoneLevel?: number;
+    targetPhoneLevel?: number;
+    targetRepeatedLevel?: number;
+  };
+}
+
 export interface LessonView {
   id: string;
   slug: string;
@@ -47,7 +67,7 @@ export interface LessonView {
   gradeLabel: string | null;
   fullText: string;
   pinyin: { paragraphs: string[] };
-  rubric: Record<string, unknown>;
+  rubric: LessonRubric;
   revision: number;
   coverUrl: string | null;
   fullDemoUrl: string | null;
@@ -163,7 +183,7 @@ export interface AdminDimensionSummary {
   needsPracticeCount: number;
 }
 
-export interface AdminLessonSummary extends LessonListItem {
+export interface AdminLessonSummary extends LessonView {
   status: string;
   pageCount: number;
   attemptCount: number;
