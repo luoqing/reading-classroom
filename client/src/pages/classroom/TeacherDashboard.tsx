@@ -341,15 +341,15 @@ export default function TeacherDashboard({
       })}</nav>
       <p className="teacher-nav-note">先看谁需要帮助，再点进学生详情听原声，不用逐条翻记录。</p>
       <div className="teacher-account">
-        <span>{account.displayName.slice(0, 1)}</span>
-        <div><strong>{account.displayName}</strong><small>管理员账号</small></div>
+        <span>师</span>
+        <div><strong>老师</strong><small>管理员账号</small></div>
         <button onClick={signOut} title="退出" aria-label="退出老师账号"><LogOut size={17} /></button>
       </div>
     </aside>
 
     <main className="teacher-main">
       <header className="teacher-topbar">
-        <div><span className="teacher-kicker">朗读教学概览</span><h1>{greeting()}，{account.displayName}</h1></div>
+        <div><span className="teacher-kicker">朗读教学概览</span><h1>{greeting()}，老师</h1></div>
         <div className="teacher-top-actions"><span><CalendarDays size={15} />{fullDateText(new Date())}</span><button onClick={() => setShowCreate(true)}><Plus size={17} />添加学生</button></div>
       </header>
 
