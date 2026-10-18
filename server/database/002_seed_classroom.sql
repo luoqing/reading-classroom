@@ -61,22 +61,23 @@ ON CONFLICT (slug) DO UPDATE SET
   video_template_url = EXCLUDED.video_template_url,
   _updated_at = CURRENT_TIMESTAMP;
 
-INSERT INTO lesson_page (lesson_id, page_no, page_type, text_content, pinyin_json, demo_audio_url, video_start_ms, video_end_ms)
-SELECT lesson.id, page_data.page_no, page_data.page_type, page_data.text_content, page_data.pinyin_json, page_data.demo_audio_url, page_data.video_start_ms, page_data.video_end_ms
+INSERT INTO lesson_page (lesson_id, page_no, page_type, text_content, pinyin_json, illustration_url, demo_audio_url, video_start_ms, video_end_ms)
+SELECT lesson.id, page_data.page_no, page_data.page_type, page_data.text_content, page_data.pinyin_json, page_data.illustration_url, page_data.demo_audio_url, page_data.video_start_ms, page_data.video_end_ms
 FROM lesson
 CROSS JOIN (VALUES
-  (1, 'cover', '秋天', '[{"text":"秋天","pinyin":"qiū tiān"}]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288717348890.mp3', 0, 2000),
-  (2, 'body', '天气凉了，树叶黄了，一片片叶子从树上落下来。', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288879333417.mp3', 2000, 9000),
-  (3, 'body', '天那么蓝，那么高。一群大雁往南飞，', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288865832058.mp3', 9000, 14000),
-  (4, 'body', '一会儿排成个“人”字，', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288876030009.mp3', 14000, 19000),
-  (5, 'body', '一会儿排成个“一”字。', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288885821531.mp3', 19000, 24000),
-  (6, 'body', '啊！秋天来了！', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288891906057.mp3', 24000, 30000)
-) AS page_data(page_no, page_type, text_content, pinyin_json, demo_audio_url, video_start_ms, video_end_ms)
+  (1, 'cover', '秋天', '[{"text":"秋天","pinyin":"qiū tiān"}]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879374043911385.jpg', 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288717348890.mp3', 0, 2000),
+  (2, 'body', '天气凉了，树叶黄了，一片片叶子从树上落下来。', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879374072662075.jpg', 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288879333417.mp3', 2000, 9000),
+  (3, 'body', '天那么蓝，那么高。一群大雁往南飞，', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879374072663051.jpg', 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288865832058.mp3', 9000, 14000),
+  (4, 'body', '一会儿排成个“人”字，', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879374110725131.jpg', 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288876030009.mp3', 14000, 19000),
+  (5, 'body', '一会儿排成个“一”字。', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879374043911401.jpg', 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288885821531.mp3', 19000, 24000),
+  (6, 'body', '啊！秋天来了！', '[]'::jsonb, 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879373996218400.jpg', 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879288891906057.mp3', 24000, 30000)
+) AS page_data(page_no, page_type, text_content, pinyin_json, illustration_url, demo_audio_url, video_start_ms, video_end_ms)
 WHERE lesson.slug = 'autumn'
 ON CONFLICT (lesson_id, page_no) DO UPDATE SET
   page_type = EXCLUDED.page_type,
   text_content = EXCLUDED.text_content,
   pinyin_json = EXCLUDED.pinyin_json,
+  illustration_url = EXCLUDED.illustration_url,
   demo_audio_url = EXCLUDED.demo_audio_url,
   video_start_ms = EXCLUDED.video_start_ms,
   video_end_ms = EXCLUDED.video_end_ms,
