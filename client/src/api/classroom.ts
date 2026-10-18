@@ -1,13 +1,18 @@
 import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
 import type {
+  AdminDashboardFilters,
   AdminDashboardResult,
   ReadingHistoryItem,
   StudentAccountInput,
   StudentCredential,
 } from '@shared/api.interface';
 
-export async function getDashboard() {
-  const response = await axiosForBackend<AdminDashboardResult>({ url: '/api/admin/dashboard', method: 'GET' });
+export async function getDashboard(filters: AdminDashboardFilters = {}) {
+  const response = await axiosForBackend<AdminDashboardResult>({
+    url: '/api/admin/dashboard',
+    method: 'GET',
+    params: filters,
+  });
   return response.data;
 }
 

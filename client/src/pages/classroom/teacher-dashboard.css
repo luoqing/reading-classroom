@@ -1,4 +1,573 @@
-.teacher-app{--t-ink:#1f2d25;--t-green:#345844;--t-cream:#f7f3e8;--t-line:#dedfd4;--t-orange:#d78943;min-height:100vh;background:#efeee8;color:var(--t-ink);font-family:"LXGW WenKai","Kaiti SC",sans-serif;display:grid;grid-template-columns:235px 1fr}.teacher-nav{background:#273e31;color:#eef2e8;padding:28px 20px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;box-sizing:border-box}.teacher-brand{display:flex;align-items:center;gap:11px;padding:0 8px 30px}.teacher-brand>span{width:36px;height:36px;display:grid;place-items:center;border-radius:12px 12px 12px 3px;background:#e2b85d;color:#273e31}.teacher-brand div{display:grid}.teacher-brand strong{font:700 18px "Noto Serif SC","Songti SC",serif}.teacher-brand small{font-size:9px;letter-spacing:.18em;color:#9cb09e}.teacher-nav nav{display:grid;gap:6px}.teacher-nav nav button{border:0;background:transparent;color:#bdd0c0;padding:12px 13px;border-radius:12px;display:flex;gap:10px;align-items:center;font-weight:700;cursor:pointer}.teacher-nav nav button.active{background:#3b5b47;color:white}.teacher-account{margin-top:auto;border-top:1px solid #496252;padding:20px 4px 0;display:grid;grid-template-columns:36px 1fr 32px;align-items:center;gap:9px}.teacher-account>span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#e8ce8b;color:#273e31;font-weight:800}.teacher-account div{display:grid}.teacher-account small{color:#9db1a0;font-size:11px}.teacher-account button{border:0;background:transparent;color:#b9c9ba;cursor:pointer}.teacher-main{padding:48px clamp(28px,5vw,72px) 80px;min-width:0}.teacher-header{display:flex;justify-content:space-between;gap:30px;align-items:flex-end}.teacher-kicker{color:#7a8b7c;font-size:11px;font-weight:800;letter-spacing:.2em}.teacher-header h1{font:800 clamp(32px,4vw,54px)/1.12 "Noto Serif SC","Songti SC",serif;margin:10px 0 8px}.teacher-header p{color:#728077;margin:0}.teacher-primary{border:0;border-radius:13px;background:var(--t-green);color:white;padding:13px 18px;font-weight:800;display:flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap}.teacher-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:35px 0 22px}.teacher-metrics article{background:#faf9f4;border:1px solid #e2e2d9;border-radius:19px;padding:20px;display:flex;align-items:center;gap:15px;box-shadow:0 12px 30px rgba(35,56,43,.05)}.teacher-metrics article>span{width:44px;height:44px;border-radius:15px;background:#e5ecdf;color:var(--t-green);display:grid;place-items:center}.teacher-metrics article.attention>span{background:#f5dfca;color:#a65d2d}.teacher-metrics article div{display:grid}.teacher-metrics small{color:#78857c}.teacher-metrics strong{font:800 30px/1.1 "Noto Serif SC","Songti SC",serif}.teacher-board{background:#faf9f4;border:1px solid #dfdfd5;border-radius:24px;overflow:hidden;box-shadow:0 18px 45px rgba(33,47,38,.06)}.teacher-toolbar{padding:18px 20px;display:flex;gap:12px;align-items:center;border-bottom:1px solid var(--t-line)}.teacher-search{background:#f0efe8;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:9px;flex:1}.teacher-search input{border:0;outline:0;background:transparent;width:100%;font:inherit}.teacher-filters{display:flex;background:#ecebe3;border-radius:11px;padding:3px}.teacher-filters button{border:0;background:transparent;padding:7px 11px;border-radius:8px;cursor:pointer;color:#68766c}.teacher-filters button.active{background:white;color:#2f4f3d;box-shadow:0 2px 8px rgba(40,56,47,.1)}.icon-button{border:1px solid var(--t-line);background:white;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;cursor:pointer}.teacher-table-head,.student-row{display:grid;grid-template-columns:minmax(195px,1.4fr) minmax(145px,1.1fr) 82px 88px 88px 88px 58px 22px;gap:12px;align-items:center}.teacher-table-head{padding:13px 22px;color:#859087;font-size:11px;font-weight:800;letter-spacing:.08em}.student-row{width:100%;box-sizing:border-box;border:0;border-top:1px solid #e8e7df;background:transparent;padding:16px 22px;text-align:left;color:var(--t-ink);cursor:pointer;font:inherit}.student-row:hover,.student-row:focus-visible{background:#f2f3eb;outline:none}.student-row>span{display:grid;gap:3px}.student-row small{font-size:11px;color:#879089}.student-name{grid-template-columns:38px 1fr!important;align-items:center}.student-name i{width:36px;height:36px;border-radius:13px 13px 13px 4px;display:grid;place-items:center;background:#dfe8da;color:#355844;font-style:normal;font-weight:800}.dimension-stars{display:block!important;color:#d99532;letter-spacing:1px;font-size:15px}.inline-audio audio{display:none}.inline-audio button{border:1px solid #d9ddd2;background:#fff;color:var(--t-green);border-radius:999px;padding:7px 10px;display:inline-flex;align-items:center;justify-content:center;gap:4px;font:700 12px inherit;cursor:pointer}.inline-audio button:hover{background:#e8efe5}.inline-audio-empty{display:block!important;color:#9aa29c;font-size:12px}.issue-count{display:block!important;width:28px;text-align:center;padding:4px;border-radius:8px;background:#eeeee7}.issue-count.active{background:#f5dfd0;color:#a04c29;font-weight:800}.teacher-message{margin:0;padding:9px 20px;background:#f9e2d5;color:#93482c}.teacher-empty{padding:70px;display:grid;place-items:center;gap:8px;color:#869087}.teacher-empty svg{color:#89a382}.student-drawer-backdrop{position:fixed;inset:0;background:rgba(24,36,29,.42);backdrop-filter:blur(3px);z-index:50;display:flex;justify-content:flex-end}.student-drawer{width:min(520px,92vw);height:100%;overflow:auto;box-sizing:border-box;background:#f9f7ef;padding:42px;position:relative;box-shadow:-30px 0 80px rgba(24,36,29,.2)}.drawer-close{position:absolute;right:22px;top:22px;border:0;background:#e8e8e0;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;cursor:pointer}.student-drawer h2,.create-dialog h2{font:800 34px "Noto Serif SC","Songti SC",serif;margin:10px 0 4px}.student-drawer>p,.create-dialog>p{color:#7d867e}.drawer-actions{display:flex;gap:8px;margin:24px 0 32px}.drawer-actions button{border:1px solid #d7d9ce;background:white;padding:9px 12px;border-radius:10px;display:flex;gap:7px;cursor:pointer}.student-drawer h3{font-family:"Noto Serif SC","Songti SC",serif;border-top:1px solid #dedfd5;padding-top:24px}.attempt-card{background:white;border:1px solid #e1e1d8;border-radius:16px;padding:16px;margin:12px 0}.attempt-card>div{display:flex;justify-content:space-between}.attempt-card span{color:#879087;font-size:12px}.attempt-card p{color:#ba7b2d;font-size:13px}.attempt-card blockquote{margin:10px 0;padding:10px 12px;border-left:3px solid #89a47f;background:#f0f3eb;color:#4d5f50}.attempt-card audio{width:100%;height:36px}.create-dialog{width:min(580px,calc(100vw - 32px));margin:auto;background:#faf8f0;border-radius:24px;padding:36px;position:relative;box-sizing:border-box}.create-dialog textarea{width:100%;box-sizing:border-box;border:1px solid #d8d8cf;border-radius:12px;padding:13px;font:14px/1.7 monospace;margin:14px 0;background:white}.credentials{max-height:80vh;overflow:auto}.credential-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px;border-top:1px solid #e2e1d9}.credential-row code{background:#eeeee7;padding:5px 7px;border-radius:7px}.drawer-empty{text-align:center;padding:30px}.teacher-message{border-radius:8px}.student-list{min-height:90px}
-@media(max-width:1000px){.teacher-app{grid-template-columns:76px 1fr}.teacher-brand div,.teacher-nav nav button:not(.active){display:none}.teacher-nav nav button{justify-content:center}.teacher-account div{display:none}.teacher-account{grid-template-columns:1fr}.teacher-account button{display:none}.teacher-main{padding:34px 24px}.teacher-table-head{display:none}.student-row{grid-template-columns:1.4fr 1.1fr 82px 54px 25px}.student-row .dimension-stars{display:none!important}.teacher-metrics{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:700px){.teacher-app{display:block}.teacher-nav{height:auto;position:relative;flex-direction:row;padding:14px 18px}.teacher-nav nav,.teacher-account{display:none}.teacher-brand{padding:0}.teacher-main{padding:24px 14px 60px}.teacher-header{align-items:flex-start;flex-direction:column}.teacher-header h1{font-size:34px}.teacher-metrics{grid-template-columns:1fr}.teacher-toolbar{flex-wrap:wrap}.teacher-search{flex-basis:100%}.teacher-filters{flex:1}.student-row{grid-template-columns:1fr 76px 28px;padding:14px}.student-row .lesson-summary,.student-row .dimension-stars,.student-row>svg{display:none!important}.student-row .issue-count{display:block!important}.credential-row{grid-template-columns:1fr}}
-.student-row{position:relative}.student-row-open{position:absolute;inset:0;z-index:1;border:0;background:transparent;cursor:pointer}.student-row-open:focus-visible{outline:3px solid #8aa694;outline-offset:-3px}.student-row:has(.student-row-open:focus-visible){background:#f2f3eb}.inline-audio{position:relative;z-index:2}
+.teacher-app {
+  --teacher-ink: #203128;
+  --teacher-muted: #788178;
+  --teacher-green: #205d42;
+  --teacher-green-deep: #163f2e;
+  --teacher-sage: #dfe7d6;
+  --teacher-cream: #f7f2e4;
+  --teacher-paper: #fffdf6;
+  --teacher-line: #dedccb;
+  --teacher-amber: #c8792d;
+  --teacher-rose: #a85e3b;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 76% 5%, rgba(222, 231, 206, .72), transparent 24rem),
+    linear-gradient(135deg, #f8f4e8 0%, #f2efdf 54%, #eee9d8 100%);
+  color: var(--teacher-ink);
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  font-family: "LXGW WenKai", "Kaiti SC", "Microsoft YaHei", sans-serif;
+}
+
+.teacher-app button,
+.teacher-app input,
+.teacher-app textarea { font: inherit; }
+.teacher-app button { cursor: pointer; }
+
+.teacher-nav {
+  min-height: 100vh;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  padding: 28px 20px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(42, 71, 54, .12);
+  background: rgba(255, 253, 246, .78);
+  backdrop-filter: blur(18px);
+}
+
+.teacher-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 25px; }
+.teacher-brand > span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px 13px 13px 4px;
+  background: var(--teacher-green);
+  color: white;
+  font: 800 22px "Noto Serif SC", "Songti SC", serif;
+  box-shadow: 0 8px 18px rgba(32, 93, 66, .2);
+}
+.teacher-brand div { display: grid; }
+.teacher-brand strong { font: 800 19px "Noto Serif SC", "Songti SC", serif; }
+.teacher-brand small { margin-top: 2px; color: #7d887e; font-size: 9px; letter-spacing: .2em; }
+
+.teacher-workspace {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 22px;
+  padding: 14px 12px;
+  border: 1px solid #dedbca;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .45);
+}
+.teacher-workspace strong { color: var(--teacher-green); font-size: 13px; }
+.teacher-workspace span { color: var(--teacher-muted); font-size: 11px; line-height: 1.55; }
+
+.teacher-nav nav { display: grid; gap: 7px; }
+.teacher-nav nav button {
+  min-height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 13px;
+  background: transparent;
+  color: #5f6a62;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  font-weight: 700;
+  transition: transform .18s ease, color .18s ease, background .18s ease;
+}
+.teacher-nav nav button:hover { color: var(--teacher-green); transform: translateX(2px); }
+.teacher-nav nav button.active {
+  color: white;
+  background: linear-gradient(135deg, #246747, #185038);
+  box-shadow: 0 10px 22px rgba(31, 92, 65, .2);
+}
+.teacher-nav-note {
+  margin: auto 5px 18px;
+  padding-top: 18px;
+  border-top: 1px solid #dedbca;
+  color: #8a9089;
+  font-size: 11px;
+  line-height: 1.75;
+}
+.teacher-account {
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 37px 1fr 32px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #dedbca;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .55);
+}
+.teacher-account > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #dfe7d6;
+  color: var(--teacher-green);
+  font-weight: 800;
+}
+.teacher-account div { display: grid; }
+.teacher-account strong { font-size: 13px; }
+.teacher-account small { color: var(--teacher-muted); font-size: 10px; }
+.teacher-account button { border: 0; background: transparent; color: #768078; }
+
+.teacher-main { min-width: 0; padding: 34px clamp(24px, 3vw, 46px) 70px; }
+.teacher-topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.teacher-topbar h1 {
+  margin: 7px 0 0;
+  font: 800 clamp(28px, 3vw, 42px) "Noto Serif SC", "Songti SC", serif;
+  letter-spacing: -.02em;
+}
+.teacher-kicker { color: #8b8f82; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
+.teacher-top-actions { display: flex; align-items: center; gap: 10px; }
+.teacher-top-actions > span,
+.teacher-top-actions > button {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid #dfddcf;
+  border-radius: 999px;
+  background: rgba(255, 253, 247, .75);
+  color: #667168;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.teacher-top-actions > button { color: var(--teacher-green); font-weight: 800; }
+
+.teacher-message {
+  margin: 18px 0 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--teacher-amber);
+  border-radius: 4px 10px 10px 4px;
+  background: #f7e7d5;
+  color: #8d4f2b;
+}
+
+.teacher-hero {
+  min-height: 140px;
+  margin-top: 24px;
+  padding: 28px 30px;
+  border: 1px solid rgba(61, 91, 67, .11);
+  border-radius: 23px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  overflow: hidden;
+  position: relative;
+  background:
+    radial-gradient(circle at 89% 35%, rgba(255, 255, 255, .85), transparent 12rem),
+    linear-gradient(120deg, rgba(255, 253, 246, .94), rgba(224, 233, 211, .72));
+  box-shadow: 0 18px 55px rgba(65, 79, 54, .07);
+}
+.teacher-hero::after {
+  content: "";
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  right: -54px;
+  top: -92px;
+  border-radius: 50%;
+  border: 38px solid rgba(211, 225, 198, .45);
+}
+.teacher-hero > div { position: relative; z-index: 1; }
+.teacher-hero h2,
+.teacher-section-page h2,
+.board-heading h2 { font-family: "Noto Serif SC", "Songti SC", serif; }
+.teacher-hero h2 { margin: 8px 0 8px; font-size: clamp(25px, 2.5vw, 34px); }
+.teacher-hero p { max-width: 630px; margin: 0; color: #68766c; line-height: 1.65; }
+.completion-card {
+  min-width: 300px;
+  padding: 14px 18px;
+  border: 1px solid rgba(59, 88, 65, .12);
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 253, 246, .85);
+}
+.completion-ring {
+  width: 62px;
+  height: 62px;
+  padding: 7px;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+.completion-ring i {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--teacher-paper);
+  color: var(--teacher-amber);
+  font: 800 15px Georgia, serif;
+}
+.completion-card div { display: grid; gap: 3px; }
+.completion-card strong { font-size: 14px; }
+.completion-card p,
+.completion-card small { margin: 0; color: #7a827a; font-size: 11px; }
+
+.teacher-filterbar {
+  margin-top: 17px;
+  display: grid;
+  grid-template-columns: minmax(240px, 1.6fr) repeat(3, minmax(130px, .7fr)) 42px;
+  gap: 10px;
+  align-items: center;
+}
+.teacher-filterbar.compact { max-width: 670px; grid-template-columns: minmax(260px, 1fr) 180px; }
+.teacher-search {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #dfddcf;
+  border-radius: 12px;
+  background: rgba(255, 253, 246, .86);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8e958d;
+}
+.teacher-search input {
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.teacher-search input:focus-visible { border: 0; box-shadow: none; }
+.teacher-select {
+  width: 100%;
+  height: 42px;
+  border-color: #dfddcf;
+  border-radius: 12px;
+  background: rgba(255, 253, 246, .86);
+}
+.icon-button {
+  width: 42px;
+  height: 42px;
+  border: 1px solid #dfddcf;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--teacher-paper);
+  color: var(--teacher-green);
+}
+
+.teacher-metrics {
+  margin: 17px 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.teacher-metrics article {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #e2dfd1;
+  border-radius: 17px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: rgba(255, 253, 247, .82);
+  box-shadow: 0 10px 26px rgba(58, 75, 61, .04);
+}
+.teacher-metrics article > span {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: #e6ecdf;
+  color: var(--teacher-green);
+}
+.teacher-metrics article.attention > span { background: #f5dfce; color: #a4572f; }
+.teacher-metrics article div { display: grid; gap: 2px; }
+.teacher-metrics small { color: var(--teacher-muted); font-size: 11px; }
+.teacher-metrics strong { font: 800 27px "Noto Serif SC", "Songti SC", serif; }
+.teacher-metrics em { margin-left: 4px; color: #8b918b; font: 400 10px inherit; }
+
+.teacher-overview-grid { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
+.teacher-board,
+.student-spotlight,
+.focus-list,
+.account-board,
+.archive-card,
+.lesson-admin-card {
+  border: 1px solid #e1ded0;
+  background: rgba(255, 253, 247, .88);
+  box-shadow: 0 16px 40px rgba(52, 70, 57, .05);
+}
+.teacher-board { min-width: 0; border-radius: 20px; overflow: hidden; }
+.board-heading { padding: 20px 20px 15px; display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+.board-heading h2 { margin: 0; font-size: 21px; }
+.board-heading p { margin: 4px 0 0; color: var(--teacher-muted); font-size: 11px; }
+.board-heading > button,
+.focus-title button,
+.spotlight-actions > button,
+.archive-card > button,
+.lesson-admin-card > button {
+  border: 0;
+  background: transparent;
+  color: var(--teacher-green);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.dimension-summary { padding: 14px 18px; border-block: 1px solid #ebe7da; background: rgba(249, 247, 238, .75); display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.dimension-bar { min-width: 0; }
+.dimension-bar > div { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.dimension-bar strong { font: 800 12px Georgia, serif; }
+.dimension-track { height: 6px; margin: 8px 0 5px; border-radius: 99px; background: #ebe8dc; display: block; overflow: hidden; }
+.dimension-track i { height: 100%; display: block; border-radius: inherit; background: linear-gradient(90deg, #6f8e70, #2f684b); }
+.dimension-bar:nth-child(3) .dimension-track i { background: linear-gradient(90deg, #d5a34d, #bd6b28); }
+.dimension-bar small { color: #969b93; font-size: 10px; }
+.student-filter-tabs { padding: 12px 18px 0; display: flex; gap: 6px; }
+.student-filter-tabs button { padding: 6px 12px; border: 0; border-radius: 999px; background: transparent; color: #747e76; font-size: 11px; }
+.student-filter-tabs button.active { background: #e4eadf; color: var(--teacher-green); font-weight: 800; }
+
+.teacher-table-head,
+.student-row {
+  display: grid;
+  grid-template-columns: minmax(155px, 1.3fr) minmax(125px, 1fr) 74px 74px 74px minmax(112px, .9fr) 48px;
+  gap: 10px;
+  align-items: center;
+}
+.teacher-table-head { padding: 12px 18px; color: #91988f; font-size: 10px; font-weight: 800; letter-spacing: .06em; }
+.student-row { position: relative; padding: 13px 18px; border-top: 1px solid #ece8dc; transition: background .18s ease; }
+.student-row:hover,
+.student-row.selected { background: #f2f4eb; }
+.student-row-open { position: absolute; inset: 0; z-index: 1; border: 0; background: transparent; }
+.student-row-open:focus-visible { outline: 3px solid #90aa94; outline-offset: -3px; }
+.student-name { min-width: 0; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 9px; }
+.student-name > i {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px 12px 12px 4px;
+  background: #dfe8d8;
+  color: var(--teacher-green);
+  font-style: normal;
+  font-weight: 800;
+}
+.student-name b { min-width: 0; display: grid; font-size: 13px; }
+.student-name small { overflow: hidden; color: #8d958e; font-size: 10px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.lesson-summary { min-width: 0; display: grid; gap: 2px; }
+.lesson-summary b { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.lesson-summary small { color: #90978f; font-size: 10px; }
+.dimension-stars { color: #cc8a29; font-size: 13px; letter-spacing: 1px; white-space: nowrap; }
+.recorded-time { color: #657269; display: flex; align-items: center; gap: 5px; font-size: 10px; }
+.inline-audio { position: relative; z-index: 2; display: inline-flex; }
+.inline-audio audio { display: none; }
+.inline-audio button {
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid #d8ddcf;
+  border-radius: 999px;
+  background: white;
+  color: var(--teacher-green);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+}
+.inline-audio.compact button { width: 34px; padding: 0; }
+.inline-audio-empty { color: #a0a59f; font-size: 11px; }
+.teacher-empty { padding: 55px 20px; color: #8c958c; display: grid; place-items: center; gap: 7px; }
+
+.teacher-insights { display: grid; gap: 15px; }
+.student-spotlight,
+.focus-list { border-radius: 20px; padding: 20px; }
+.spotlight-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.spotlight-head > span { padding: 5px 8px; border-radius: 999px; background: #f6e4d2; color: #a15931; font-size: 10px; }
+.spotlight-meta { margin: 16px 0 13px; display: grid; gap: 3px; }
+.spotlight-meta strong { font-family: "Noto Serif SC", "Songti SC", serif; }
+.spotlight-meta span { color: #90978e; font-size: 10px; }
+.spotlight-scores { padding: 13px; border-radius: 14px; background: #f5f3e9; display: grid; gap: 10px; }
+.student-score { display: grid; grid-template-columns: 52px 1fr 28px; gap: 8px; align-items: center; font-size: 10px; }
+.student-score > i { height: 5px; border-radius: 99px; background: #e2e0d6; overflow: hidden; }
+.student-score > i > span { height: 100%; min-width: 3px; border-radius: inherit; background: #66886b; display: block; }
+.student-score strong { color: var(--teacher-green); }
+.student-spotlight blockquote { margin: 14px 0; padding: 12px; border-left: 3px solid var(--teacher-amber); background: #fbf2e4; color: #66594d; font-size: 11px; line-height: 1.65; }
+.student-spotlight blockquote strong { display: block; margin-bottom: 4px; color: #784b2b; }
+.spotlight-actions { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.spotlight-actions .inline-audio button { min-height: 38px; background: var(--teacher-green); color: white; border-color: var(--teacher-green); }
+.focus-title { display: flex; justify-content: space-between; gap: 12px; align-items: start; margin-bottom: 10px; }
+.focus-title h3 { margin: 0; font: 800 18px "Noto Serif SC", "Songti SC", serif; }
+.focus-title p { margin: 3px 0 0; color: #979c96; font-size: 10px; }
+.focus-list > button { width: 100%; padding: 10px 0; border: 0; border-top: 1px solid #ebe7da; background: transparent; display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 8px; text-align: left; }
+.focus-list > button > i { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: #eee7d6; color: #8b6a38; font-style: normal; font-weight: 800; }
+.focus-list > button > span { display: grid; }
+.focus-list > button strong { font-size: 12px; }
+.focus-list > button small { color: #929890; font-size: 10px; }
+.focus-list > button em { color: #b56b35; font-size: 10px; font-style: normal; }
+.focus-clear,
+.insight-empty { padding: 22px 5px; color: #849087; display: grid; place-items: center; gap: 6px; text-align: center; font-size: 11px; }
+
+.teacher-section-page { margin-top: 26px; }
+.section-page-heading { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: end; gap: 20px; }
+.section-page-heading h2 { margin: 7px 0 4px; font-size: 32px; }
+.section-page-heading p { margin: 0; color: var(--teacher-muted); }
+.teacher-primary { min-height: 42px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--teacher-green); color: white; display: inline-flex; align-items: center; gap: 7px; font-weight: 800; }
+.archive-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.archive-card,
+.lesson-admin-card { padding: 18px; border-radius: 18px; }
+.archive-card-head { display: flex; align-items: start; justify-content: space-between; gap: 10px; }
+.archive-card-head > span:last-child,
+.account-status { padding: 4px 8px; border-radius: 999px; font-size: 10px; }
+.archive-card-head > span.active,
+.account-status.active { background: #e4ecde; color: var(--teacher-green); }
+.archive-card-head > span.disabled,
+.account-status.disabled { background: #eee9e1; color: #8b8176; }
+.archive-facts { margin: 16px 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.archive-facts span { min-width: 0; padding: 9px; border-radius: 10px; background: #f3f1e8; display: grid; gap: 4px; }
+.archive-facts small { color: #90968f; font-size: 9px; }
+.archive-facts strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.archive-stars { display: flex; flex-wrap: wrap; gap: 5px 12px; color: #b9782c; font-size: 10px; }
+.archive-card > button,
+.lesson-admin-card > button { margin-top: 16px; padding: 0; }
+
+.lesson-admin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+.lesson-admin-top { display: flex; justify-content: space-between; align-items: center; }
+.lesson-admin-top > span { width: 43px; height: 43px; border-radius: 14px; display: grid; place-items: center; background: #e4eadc; color: var(--teacher-green); }
+.lesson-admin-top em { padding: 5px 8px; border-radius: 999px; background: #e7eee1; color: var(--teacher-green); font-size: 10px; font-style: normal; }
+.lesson-admin-card h3 { margin: 18px 0 5px; font: 800 23px "Noto Serif SC", "Songti SC", serif; }
+.lesson-admin-card > p,
+.lesson-admin-card > small { color: #858d85; font-size: 11px; }
+.lesson-admin-card dl { margin: 18px 0 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.lesson-admin-card dl div { padding: 10px; border-radius: 11px; background: #f2f0e7; text-align: center; }
+.lesson-admin-card dt { color: #969b95; font-size: 9px; }
+.lesson-admin-card dd { margin: 4px 0 0; font: 800 20px Georgia, serif; }
+
+.account-board { margin-top: 18px; border-radius: 19px; overflow: hidden; }
+.account-table-head,
+.account-row { display: grid; grid-template-columns: minmax(180px, 1.2fr) minmax(150px, 1fr) 140px 80px 210px; gap: 14px; align-items: center; }
+.account-table-head { padding: 14px 20px; color: #8f968e; font-size: 10px; font-weight: 800; }
+.account-row { padding: 14px 20px; border-top: 1px solid #ebe7dc; }
+.account-row code { width: fit-content; padding: 4px 7px; border-radius: 7px; background: #f0eee5; color: #59675d; font-size: 11px; }
+.account-row > span:not(.student-name) { color: #758078; font-size: 11px; }
+.account-row > div { display: flex; justify-content: flex-end; gap: 7px; }
+.account-row > div button { min-height: 32px; padding: 0 9px; border: 1px solid #d8dbcf; border-radius: 9px; background: white; color: #506258; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; }
+
+.teacher-loading { position: fixed; inset: 0 0 0 232px; z-index: 30; display: grid; place-content: center; gap: 10px; background: rgba(247, 243, 232, .78); color: var(--teacher-green); text-align: center; backdrop-filter: blur(4px); }
+.teacher-loading svg { margin: auto; animation: teacher-spin 1s linear infinite; }
+@keyframes teacher-spin { to { transform: rotate(360deg); } }
+
+.student-drawer-backdrop { position: fixed; inset: 0; z-index: 50; display: flex; justify-content: flex-end; background: rgba(25, 39, 31, .42); backdrop-filter: blur(4px); }
+.student-drawer { width: min(520px, 94vw); height: 100%; overflow: auto; box-sizing: border-box; padding: 40px; position: relative; background: #fbf8ee; box-shadow: -30px 0 80px rgba(24, 36, 29, .2); }
+.drawer-close { position: absolute; top: 20px; right: 20px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #ebe9df; display: grid; place-items: center; }
+.student-drawer h2,
+.create-dialog h2 { margin: 10px 0 4px; font: 800 33px "Noto Serif SC", "Songti SC", serif; }
+.student-drawer > p,
+.create-dialog > p { color: #7e877f; }
+.drawer-actions { margin: 23px 0 30px; display: flex; gap: 8px; }
+.drawer-actions button { min-height: 36px; padding: 0 11px; border: 1px solid #d7d9ce; border-radius: 10px; background: white; display: inline-flex; align-items: center; gap: 7px; }
+.student-drawer h3 { padding-top: 22px; border-top: 1px solid #dedfd5; font-family: "Noto Serif SC", "Songti SC", serif; }
+.attempt-card { margin: 12px 0; padding: 16px; border: 1px solid #e1e1d8; border-radius: 15px; background: white; }
+.attempt-card > div { display: flex; justify-content: space-between; gap: 8px; }
+.attempt-card span { color: #879087; font-size: 11px; }
+.attempt-card p { color: #a66d28; font-size: 12px; }
+.attempt-card blockquote { margin: 10px 0; padding: 10px 12px; border-left: 3px solid #89a47f; background: #f0f3eb; color: #4d5f50; }
+.attempt-card audio { width: 100%; height: 36px; }
+.drawer-empty { padding: 30px; text-align: center; }
+.lesson-detail-stats { margin-top: 25px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
+.lesson-detail-stats article { padding: 14px; border-radius: 14px; background: #f0eee5; display: grid; gap: 6px; }
+.lesson-detail-stats svg { color: var(--teacher-green); }
+.lesson-detail-stats small { color: #8a918a; }
+.lesson-detail-stats strong { font: 800 27px Georgia, serif; }
+.lesson-last-record { margin-top: 18px; padding: 12px; border-radius: 11px; background: #f5ead8; color: #765332!important; }
+
+.create-dialog { width: min(580px, calc(100vw - 32px)); max-height: 86vh; margin: auto; padding: 36px; overflow: auto; box-sizing: border-box; position: relative; border-radius: 24px; background: #faf8f0; }
+.create-dialog textarea { width: 100%; min-height: 190px; box-sizing: border-box; margin: 14px 0; padding: 13px; border: 1px solid #d8d8cf; border-radius: 12px; resize: vertical; background: white; line-height: 1.7; }
+.credential-row { padding: 12px; border-top: 1px solid #e2e1d9; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.credential-row code { padding: 5px 7px; border-radius: 7px; background: #eeeee7; }
+
+@media (max-width: 1240px) {
+  .teacher-app { grid-template-columns: 86px minmax(0, 1fr); }
+  .teacher-brand { justify-content: center; padding-inline: 0; }
+  .teacher-brand div,
+  .teacher-workspace,
+  .teacher-nav-note,
+  .teacher-account div { display: none; }
+  .teacher-nav nav button { justify-content: center; padding: 0; font-size: 0; }
+  .teacher-nav nav button svg { width: 20px; height: 20px; }
+  .teacher-account { grid-template-columns: 1fr; justify-items: center; }
+  .teacher-account button { display: none; }
+  .teacher-overview-grid { grid-template-columns: 1fr; }
+  .teacher-insights { grid-template-columns: 1fr 1fr; }
+  .teacher-loading { left: 86px; }
+  .archive-grid,
+  .lesson-admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .teacher-filterbar { grid-template-columns: 1fr 1fr; }
+  .teacher-search { grid-column: 1 / -1; }
+  .teacher-metrics { grid-template-columns: 1fr 1fr; }
+  .teacher-table-head { display: none; }
+  .student-row { grid-template-columns: minmax(150px, 1.3fr) minmax(110px, 1fr) minmax(110px, .8fr) 42px; }
+  .student-row .dimension-stars { display: none; }
+  .account-table-head { display: none; }
+  .account-row { grid-template-columns: 1fr 1fr; }
+  .account-row > div { justify-content: flex-start; }
+}
+
+@media (max-width: 680px) {
+  .teacher-app { display: block; }
+  .teacher-nav { height: auto; min-height: 0; position: sticky; z-index: 20; padding: 10px 14px; flex-direction: row; align-items: center; gap: 12px; }
+  .teacher-brand { padding: 0; }
+  .teacher-brand > span { width: 34px; height: 34px; font-size: 17px; }
+  .teacher-nav nav { flex: 1; display: flex; justify-content: flex-end; }
+  .teacher-nav nav button { width: 36px; min-height: 36px; }
+  .teacher-account { display: none; }
+  .teacher-main { padding: 22px 14px 65px; }
+  .teacher-topbar { align-items: flex-start; }
+  .teacher-topbar h1 { font-size: 27px; }
+  .teacher-top-actions > span { display: none; }
+  .teacher-top-actions > button { min-height: 38px; padding: 0 11px; }
+  .teacher-hero { padding: 22px; display: grid; }
+  .completion-card { min-width: 0; }
+  .teacher-filterbar,
+  .teacher-filterbar.compact { grid-template-columns: 1fr; }
+  .teacher-search { grid-column: auto; }
+  .icon-button { width: 100%; }
+  .teacher-metrics { grid-template-columns: 1fr 1fr; }
+  .teacher-metrics article { padding: 13px; }
+  .teacher-metrics article > span { display: none; }
+  .dimension-summary { grid-template-columns: 1fr; }
+  .teacher-insights { grid-template-columns: 1fr; }
+  .student-row { grid-template-columns: 1fr 116px 36px; padding: 13px; }
+  .student-row .lesson-summary,
+  .student-row .dimension-stars { display: none; }
+  .recorded-time { font-size: 10px; }
+  .archive-grid,
+  .lesson-admin-grid { grid-template-columns: 1fr; }
+  .archive-facts { grid-template-columns: 1fr 1fr; }
+  .section-page-heading { align-items: flex-start; flex-direction: column; }
+  .account-row { grid-template-columns: 1fr; gap: 8px; }
+  .account-row > div { flex-wrap: wrap; }
+  .teacher-loading { left: 0; }
+  .student-drawer { padding: 34px 22px; }
+  .credential-row { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-nav nav button,
+  .teacher-loading svg { transition: none; animation: none; }
+}

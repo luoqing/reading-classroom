@@ -135,7 +135,10 @@ export interface StudentCredential {
 
 export interface AdminStudentSummary extends AccountView {
   attemptCount: number;
-  lastPracticedAt: string | null;
+  periodAttemptCount: number;
+  latestRecordedAt: string | null;
+  lastLoginAt: string | null;
+  lessonId: string | null;
   lessonTitle: string | null;
   latestAttemptId: string | null;
   audioUrl: string | null;
@@ -146,11 +149,52 @@ export interface AdminStudentSummary extends AccountView {
   teacherComment: string | null;
 }
 
+export type AdminDashboardRange = 'week' | '7d' | '30d' | 'all';
+
+export interface AdminDashboardFilters {
+  className?: string;
+  lessonId?: string;
+  range?: AdminDashboardRange;
+}
+
+export interface AdminDimensionSummary {
+  averageStars: number | null;
+  ratedCount: number;
+  needsPracticeCount: number;
+}
+
+export interface AdminLessonSummary extends LessonListItem {
+  status: string;
+  pageCount: number;
+  attemptCount: number;
+  completedStudentCount: number;
+  latestRecordedAt: string | null;
+}
+
 export interface AdminDashboardResult {
   students: AdminStudentSummary[];
   totals: {
     studentCount: number;
-    practicedCount: number;
+    completedStudentCount: number;
+    completionRate: number;
+    periodAttemptCount: number;
+    averageAttempts: number;
     needsHelpCount: number;
+  };
+  dimensions: {
+    accuracy: AdminDimensionSummary;
+    natural: AdminDimensionSummary;
+    delivery: AdminDimensionSummary;
+  };
+  options: {
+    classNames: string[];
+    lessons: { id: string; title: string }[];
+  };
+  lessons: AdminLessonSummary[];
+  period: {
+    range: AdminDashboardRange;
+    label: string;
+    startAt: string | null;
+    endAt: string;
   };
 }

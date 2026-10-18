@@ -1,6 +1,6 @@
-import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
-import type { StudentAccountInput } from '@shared/api.interface';
+import type { AdminDashboardRange, StudentAccountInput } from '@shared/api.interface';
 import { AuthService } from '../auth/auth.service';
 import { ClassroomService } from './classroom.service';
 
@@ -12,9 +12,14 @@ export class ClassroomController {
   ) {}
 
   @Get('dashboard')
-  async dashboard(@Req() req: Request) {
+  async dashboard(
+    @Req() req: Request,
+    @Query('className') className?: string,
+    @Query('lessonId') lessonId?: string,
+    @Query('range') range?: AdminDashboardRange,
+  ) {
     await this.auth.requireAccount(req, 'admin');
-    return this.classroom.dashboard();
+    return this.classroom.dashboard({ className, lessonId, range });
   }
 
   @Post('students')
