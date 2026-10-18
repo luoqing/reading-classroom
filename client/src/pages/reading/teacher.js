@@ -1,5 +1,9 @@
 import { teacherClips } from './teacher-clips';
-import { buildTeacherComment, buildTeacherSpeechKeys } from './teacher-comment';
+import {
+  buildTeacherComment,
+  buildTeacherSpeechKeys,
+  selectPracticeIssue,
+} from './teacher-comment';
 import { teacherSpeechClips } from './teacher-speech-clips';
 import { assetRoot, readingAssets } from './assets';
 
@@ -10,7 +14,7 @@ const segmentClips = {
   tone: { url: assetRoot + '1879289121640538.mp3', text: '这句话的声调可以再稳一点。先听回放，再留意橙色重点字的声调和变调。' },
   pronunciation: { url: assetRoot + '1879289136252938.mp3', text: '这句话有几个字音可以更清楚。先把橙色重点字读准，再连贯地读完整句话。' },
 };
-export const playableIssue = report => report?.issues.find(i => Number.isFinite(i.start) && Number.isFinite(i.end) && i.start >= 0 && i.end > i.start);
+export const playableIssue = report => selectPracticeIssue(report);
 
 export function selectTeacherClip(report) {
   if (!report) return 'welcome';

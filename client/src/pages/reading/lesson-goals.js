@@ -107,11 +107,31 @@ function accuracyGoal(words, confidentIssues, targets) {
   });
   const passed = results.filter(result => result.passed);
   const failed = results.filter(result => !result.passed);
+  const referencePositions = new Set();
+  words.forEach(word => {
+    if (!Number.isInteger(word.position) || !Number.isInteger(word.length)) return;
+    for (let offset = 0; offset < word.length; offset += 1) referencePositions.add(word.position + offset);
+  });
+  const failureKeys = new Set(confidentIssues.map((issue, index) =>
+    Number.isInteger(issue.position) ? `position:${issue.position}` : `unpositioned:${index}`));
+  const totalCount = referencePositions.size;
+  const failedCount = Math.min(totalCount, failureKeys.size);
+  const passedCount = Math.max(0, totalCount - failedCount);
+  const practiceWords = [...new Set(confidentIssues.map(issue => {
+    const target = targets.find(item => item.char === issue.word);
+    return target ? `${target.char}（${target.reading}）` : issue.word;
+  }).filter(Boolean))];
   return {
-    stars: starFromRatio(passed.length, results.length),
-    count: `${passed.length}/${results.length}个字音`,
-    good: passed.length ? `AI未发现明显字音问题：${passed.map(result => result.char).join('、')}` : '这次先不着急，跟着示范读一遍',
-    practice: failed.length ? `再练：${failed.map(result => `${result.char}（${result.reading}）`).join('、')}` : `${targets.length}个重点字均未发现明显问题`,
+    stars: starFromRatio(passedCount, totalCount),
+    count: `${passedCount}/${totalCount}处读准确`,
+    good: confidentIssues.length
+      ? `${passedCount}/${totalCount}处读准确，${passed.length}/${results.length}个重点字未发现明显问题`
+      : `整篇未发现高置信度错读、漏读或多读，${targets.length}个重点字均读准`,
+    practice: practiceWords.length
+      ? `再练：${practiceWords.join('、')}`
+      : failed.length
+        ? `再练：${failed.map(result => `${result.char}（${result.reading}）`).join('、')}`
+        : '继续保持每个字都读清楚、读完整',
     issues: [],
   };
 }
@@ -135,9 +155,9 @@ function neutralGoal(words, labels = []) {
   return {
     stars: starFromRatio(passed.length, results.length),
     count: `${passed.length}/${results.length}处轻声`,
-    good: passed.length ? `AI确认轻声自然：${passed.map(result => result.label).join('、')}` : '这次先不着急，跟着示范读一遍',
-    practice: failed.length ? `再练：${failed.map(result => result.label).join('、')}里的轻声“${neutralCharacter}”要轻、短` : `${labels.length}处轻声“${neutralCharacter}”均未发现明显拖长或重复`,
-    issues: failed.map(result => timedIssue(result.word, !result.neutral ? `轻声“${neutralCharacter}”疑似漏读或重复` : `轻声“${neutralCharacter}”稍拖长`)).filter(Boolean),
+    good: passed.length ? `AI未发现明显重读或拖长：${passed.map(result => result.label).join('、')}` : '这次先不着急，跟着示范读一遍',
+    practice: failed.length ? `再练：${failed.map(result => result.label).join('、')}里的轻声“${neutralCharacter}”要轻、短` : `${labels.length}处轻声“${neutralCharacter}”均读得较轻、较短`,
+    issues: failed.map(result => timedIssue(result.word, !result.neutral ? `轻声“${neutralCharacter}”需再听一次` : `轻声“${neutralCharacter}”稍拖长`)).filter(Boolean),
     passedCount: passed.length,
     totalCount: results.length,
   };

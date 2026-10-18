@@ -53,7 +53,7 @@ export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () =>
           <button class="secondary" type="button" data-next>下一页 →</button>
         </div>
         <div class="dubbing-finish-actions">
-          <button class="primary dubbing-evaluate" type="button" data-evaluate disabled>提交讯飞评测</button>
+          <button class="primary dubbing-evaluate" type="button" data-evaluate disabled>提交评测</button>
           <button class="secondary dubbing-compose" type="button" data-compose disabled>✦ 合成朗读视频</button>
         </div>
       </div>
@@ -137,7 +137,7 @@ export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () =>
     recordButton.textContent = replaceIndex === currentIndex ? '再点一次确认重录' : clip ? '● 重新录这一页' : '● 开始录这一页';
     evaluateButton.disabled = completed !== pages.length || evaluating || composing;
     composeButton.disabled = completed !== pages.length || evaluating;
-    evaluateButton.textContent = evaluating ? '正在提交讯飞…' : '提交讯飞评测';
+    evaluateButton.textContent = evaluating ? '正在评测…' : '提交评测';
     composeButton.textContent = composing ? 'Ⅱ 停止播放' : completed === pages.length ? '✦ 合成朗读视频' : `还有 ${pages.length - completed} 页未录`;
     dots.innerHTML = pages.map((page, index) => `<button type="button" data-page="${index}" aria-label="第 ${index + 1} 页" class="${index === currentIndex ? 'active ' : ''}${clips[index] ? 'done' : ''}"><span>${clips[index] ? '✓' : index + 1}</span></button>`).join('');
     if (!composing) setStatus(clip ? `这一页已录好 · ${formatSeconds(clip.duration)}` : '这一页还没有配音。');
@@ -263,10 +263,10 @@ export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () =>
     stopAudio();
     evaluating = true;
     render();
-    setStatus(`正在合并 ${pages.length} 页配音并提交讯飞评测。`);
+    setStatus(`正在合并 ${pages.length} 页配音，请选择评测方式。`);
     let errorMessage = '';
     try { await onEvaluate({ coverClip: null, clips: clips.slice(), pages: pages.slice() }); }
-    catch (error) { errorMessage = error?.message || '讯飞评测失败，逐页录音已保留，可以重试。'; }
+    catch (error) { errorMessage = error?.message || '评测失败，逐页录音已保留，可以重试。'; }
     finally {
       evaluating = false;
       if (dialog.open) {

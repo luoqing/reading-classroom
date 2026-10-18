@@ -4,6 +4,7 @@ import { isAxiosError } from 'axios';
 import type {
   EvaluationReportRequest,
   GuestReadingResult,
+  ReadingEvaluationMode,
   ReadingHistoryItem,
   ReadingResult,
   StoredClip,
@@ -18,12 +19,16 @@ function base64(arrayBuffer: ArrayBuffer) {
   return btoa(binary);
 }
 
-export async function evaluateGuestReading(text: string, pcm: ArrayBuffer): Promise<GuestReadingResult> {
+export async function evaluateGuestReading(
+  text: string,
+  pcm: ArrayBuffer,
+  provider: ReadingEvaluationMode,
+): Promise<GuestReadingResult> {
   try {
     const response = await axiosForBackend<GuestReadingResult>({
       url: '/api/reading/evaluate-guest',
       method: 'POST',
-      data: { text, audio: base64(pcm) },
+      data: { text, audio: base64(pcm), provider },
       timeout: 125000,
       meta: { autoJumpToLogin: false },
     });
@@ -50,6 +55,7 @@ export async function evaluateReading(
   text: string,
   pcm: ArrayBuffer,
   sourceBlob: Blob,
+  provider: ReadingEvaluationMode,
   recordingMode: 'full_text' | 'dubbing' = 'full_text',
   clipInputs: ClipUploadInput[] = [],
 ): Promise<ReadingResult> {
@@ -74,6 +80,7 @@ export async function evaluateReading(
         lessonSlug,
         text,
         audio: base64(pcm),
+        provider,
         recordingMode,
         storedAudio: {
           bucketId: stored.bucketId,

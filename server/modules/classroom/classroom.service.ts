@@ -158,7 +158,7 @@ export class ClassroomService {
     }).from(readingAttempt)
       .innerJoin(lesson, eq(lesson.id, readingAttempt.lessonId))
       .leftJoin(readingEvaluation, eq(readingEvaluation.attemptId, readingAttempt.id))
-      .orderBy(desc(readingAttempt.recordedAt), desc(readingEvaluation.versionNo));
+      .orderBy(desc(readingAttempt.recordedAt), asc(readingEvaluation.versionNo));
 
     const seenAttempts = new Set<string>();
     const uniqueAttempts = attemptRows.filter(row => {
@@ -297,8 +297,14 @@ export class ClassroomService {
       .innerJoin(lesson, eq(lesson.id, readingAttempt.lessonId))
       .leftJoin(readingEvaluation, eq(readingEvaluation.attemptId, readingAttempt.id))
       .where(eq(readingAttempt.studentId, studentId))
-      .orderBy(desc(readingAttempt.recordedAt));
-    return Promise.all(rows.map(async row => ({
+      .orderBy(desc(readingAttempt.recordedAt), asc(readingEvaluation.versionNo));
+    const seenAttempts = new Set<string>();
+    const uniqueRows = rows.filter(row => {
+      if (seenAttempts.has(row.attempt.id)) return false;
+      seenAttempts.add(row.attempt.id);
+      return true;
+    });
+    return Promise.all(uniqueRows.map(async row => ({
       attemptId: row.attempt.id,
       evaluationId: row.evaluation?.id || null,
       lessonTitle: row.lessonTitle,

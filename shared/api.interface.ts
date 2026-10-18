@@ -88,10 +88,26 @@ export interface StoredClip extends StoredAudio {
   clipType: 'cover' | 'body';
 }
 
+export type ReadingEvaluationProvider = 'xfyun' | 'tencent';
+export type ReadingEvaluationMode = ReadingEvaluationProvider | 'both';
+
+export interface ProviderEvaluationResult {
+  provider: ReadingEvaluationProvider;
+  evaluationId?: string;
+  rawResult: string;
+  sid?: string;
+}
+
+export interface ProviderEvaluationError {
+  provider: ReadingEvaluationProvider;
+  message: string;
+}
+
 export interface ReadingRequest {
   lessonSlug: string;
   text: string;
   audio: string;
+  provider: ReadingEvaluationMode;
   recordingMode: 'full_text' | 'dubbing';
   storedAudio: StoredAudio;
   clips?: StoredClip[];
@@ -99,19 +115,19 @@ export interface ReadingRequest {
 
 export interface ReadingResult {
   attemptId: string;
-  evaluationId: string;
-  xml: string;
-  sid?: string;
+  evaluations: ProviderEvaluationResult[];
+  errors: ProviderEvaluationError[];
 }
 
 export interface GuestReadingRequest {
   text: string;
   audio: string;
+  provider: ReadingEvaluationMode;
 }
 
 export interface GuestReadingResult {
-  xml: string;
-  sid?: string;
+  evaluations: ProviderEvaluationResult[];
+  errors: ProviderEvaluationError[];
 }
 
 export interface EvaluationReportRequest {

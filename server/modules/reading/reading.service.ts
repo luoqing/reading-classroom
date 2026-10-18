@@ -1,13 +1,34 @@
 import WebSocket from 'ws';
 import { BadGatewayException, BadRequestException, HttpException, Inject, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { DRIZZLE_DATABASE, FileService, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { createHmac } from 'node:crypto';
-import type { EvaluationReportRequest, GuestReadingRequest, GuestReadingResult, ReadingHistoryItem, ReadingRequest, ReadingResult } from '../../../shared/api.interface';
+import type {
+  EvaluationReportRequest,
+  GuestReadingRequest,
+  GuestReadingResult,
+  ProviderEvaluationError,
+  ProviderEvaluationResult,
+  ReadingEvaluationMode,
+  ReadingEvaluationProvider,
+  ReadingHistoryItem,
+  ReadingRequest,
+  ReadingResult,
+} from '../../../shared/api.interface';
 import { lesson, lessonPage, readingAttempt, readingClip, readingEvaluation, studentLessonProgress } from '@server/database/schema';
 import { signedStoredFileUrl } from '@server/common/storage-url';
+import { callTencentSoe, configuredTencentSoe } from './tencent-soe.provider';
 
-interface ProviderResult { xml: string; sid?: string }
+interface ProviderResult {
+  provider: ReadingEvaluationProvider;
+  rawResult: string;
+  sid?: string;
+}
+
+interface ProviderBatchResult {
+  evaluations: ProviderResult[];
+  errors: ProviderEvaluationError[];
+}
 
 @Injectable()
 export class ReadingService {
@@ -19,8 +40,13 @@ export class ReadingService {
     private readonly files: FileService,
   ) {}
 
-  configured(): boolean {
-    return Boolean(process.env.XFYUN_APP_ID && process.env.XFYUN_API_KEY && process.env.XFYUN_API_SECRET);
+  configured(provider: ReadingEvaluationProvider = 'xfyun'): boolean {
+    if (provider === 'tencent') return configuredTencentSoe();
+    return Boolean(
+      process.env.XFYUN_APP_ID
+        && process.env.XFYUN_API_KEY
+        && process.env.XFYUN_API_SECRET,
+    );
   }
 
   async evaluate(input: ReadingRequest, studentId: string): Promise<ReadingResult> {
@@ -75,58 +101,132 @@ export class ReadingService {
         updatedAt: new Date(),
       },
     });
-    if (!this.configured()) throw new ServiceUnavailableException('老师尚未配置讯飞服务。');
-    const now = Date.now();
-    this.started = this.started.filter((time: number) => now - time < 3600000);
-    // Per-instance guard: not a global billing cap across platform replicas/restarts.
-    if (this.active >= 2 || this.started.length >= 60) {
-      throw new HttpException('当前练习较多，请稍后再提交。录音已保留。', 429);
-    }
-    this.active++;
-    this.started.push(now);
     try {
-      const provider = await this.callProvider(input.text, audio);
-      const [evaluation] = await this.db.insert(readingEvaluation).values({
-        attemptId: attempt.id,
-        providerSid: provider.sid,
-        algorithmVersion: 'xfyun-common-v2-three-dimension-20261017',
-        rawXml: provider.xml,
-      }).returning();
+      const batch: ProviderBatchResult = await this.evaluateProviders(
+        input.provider,
+        input.text,
+        audio,
+        true,
+      );
+      const evaluations: ProviderEvaluationResult[] = [];
+      for (const providerResult of batch.evaluations) {
+        const [evaluation] = await this.db.insert(readingEvaluation).values({
+          attemptId: attempt.id,
+          versionNo: providerResult.provider === 'xfyun' ? 1 : 2,
+          provider: providerResult.provider,
+          providerSid: providerResult.sid,
+          algorithmVersion: providerResult.provider === 'xfyun'
+            ? 'xfyun-common-v2-three-dimension-20261017'
+            : 'tencent-soe-v1-segment-20261018',
+          rawXml: providerResult.rawResult,
+        }).returning();
+        evaluations.push({
+          provider: providerResult.provider,
+          evaluationId: evaluation.id,
+          rawResult: providerResult.rawResult,
+          sid: providerResult.sid,
+        });
+      }
+      if (!evaluations.length) {
+        throw new BadGatewayException(batch.errors[0]?.message || '评测失败，请重试。');
+      }
       await this.db.update(readingAttempt).set({ status: 'evaluated', updatedAt: new Date() })
         .where(eq(readingAttempt.id, attempt.id));
+      const latestEvaluation: ProviderEvaluationResult = evaluations.find(
+        (item: ProviderEvaluationResult) => item.provider === 'xfyun',
+      ) || evaluations[0];
       await this.db.update(studentLessonProgress).set({
-        latestEvaluationId: evaluation.id,
+        latestEvaluationId: latestEvaluation.evaluationId,
         updatedAt: new Date(),
       }).where(and(
         eq(studentLessonProgress.studentId, studentId),
         eq(studentLessonProgress.lessonId, lessonRecord.id),
       ));
-      return { attemptId: attempt.id, evaluationId: evaluation.id, xml: provider.xml, sid: provider.sid };
+      return { attemptId: attempt.id, evaluations, errors: batch.errors };
     } catch (error) {
       await this.db.update(readingAttempt).set({ status: 'evaluation_failed', updatedAt: new Date() })
         .where(eq(readingAttempt.id, attempt.id));
       if (error instanceof HttpException) throw error;
-      throw new BadGatewayException(error instanceof Error ? error.message : '讯飞评测失败，请重试。');
-    } finally {
-      this.active--;
+      throw new BadGatewayException(error instanceof Error ? error.message : '评测失败，请重试。');
     }
   }
 
   async evaluateGuest(input: GuestReadingRequest): Promise<GuestReadingResult> {
     const audio = this.validateAudio(input);
-    if (!this.configured()) throw new ServiceUnavailableException('老师尚未配置讯飞服务。');
+    const batch: ProviderBatchResult = await this.evaluateProviders(
+      input.provider,
+      input.text,
+      audio,
+      false,
+    );
+    if (!batch.evaluations.length) {
+      throw new BadGatewayException(batch.errors[0]?.message || '评测失败，请重试。');
+    }
+    return {
+      evaluations: batch.evaluations.map((item: ProviderResult) => ({
+        provider: item.provider,
+        rawResult: item.rawResult,
+        sid: item.sid,
+      })),
+      errors: batch.errors,
+    };
+  }
+
+  private requestedProviders(mode: ReadingEvaluationMode): ReadingEvaluationProvider[] {
+    if (mode === 'both') return ['xfyun', 'tencent'];
+    if (mode === 'xfyun' || mode === 'tencent') return [mode];
+    throw new BadRequestException('请选择讯飞评测、腾讯评测或双评测。');
+  }
+
+  private async evaluateProviders(
+    mode: ReadingEvaluationMode,
+    text: string,
+    audio: Buffer,
+    recordingStored: boolean,
+  ): Promise<ProviderBatchResult> {
+    const requested: ReadingEvaluationProvider[] = this.requestedProviders(mode);
+    const available: ReadingEvaluationProvider[] = requested.filter(
+      (provider: ReadingEvaluationProvider) => this.configured(provider),
+    );
+    const errors: ProviderEvaluationError[] = requested
+      .filter((provider: ReadingEvaluationProvider) => !this.configured(provider))
+      .map((provider: ReadingEvaluationProvider) => ({
+        provider,
+        message: provider === 'xfyun'
+          ? '老师尚未配置讯飞服务。'
+          : '老师尚未配置腾讯评测服务。',
+      }));
+    if (!available.length) {
+      throw new ServiceUnavailableException(errors[0]?.message || '老师尚未配置评测服务。');
+    }
     const now = Date.now();
     this.started = this.started.filter((time: number) => now - time < 3600000);
     if (this.active >= 2 || this.started.length >= 60) {
-      throw new HttpException('当前练习较多，请稍后再提交。', 429);
+      throw new HttpException(
+        recordingStored
+          ? '当前练习较多，请稍后再提交。录音已保留。'
+          : '当前练习较多，请稍后再提交。',
+        429,
+      );
     }
     this.active++;
     this.started.push(now);
     try {
-      return await this.callProvider(input.text, audio);
-    } catch (error) {
-      if (error instanceof HttpException) throw error;
-      throw new BadGatewayException(error instanceof Error ? error.message : '讯飞评测失败，请重试。');
+      const settled: PromiseSettledResult<ProviderResult>[] = await Promise.allSettled(
+        available.map((provider: ReadingEvaluationProvider) => this.callProvider(provider, text, audio)),
+      );
+      const evaluations: ProviderResult[] = [];
+      settled.forEach((result: PromiseSettledResult<ProviderResult>, index: number) => {
+        const provider: ReadingEvaluationProvider = available[index];
+        if (result.status === 'fulfilled') evaluations.push(result.value);
+        else errors.push({
+          provider,
+          message: result.reason instanceof Error
+            ? result.reason.message
+            : `${provider === 'xfyun' ? '讯飞' : '腾讯'}评测失败，请重试。`,
+        });
+      });
+      return { evaluations, errors };
     } finally {
       this.active--;
     }
@@ -167,8 +267,14 @@ export class ReadingService {
       .innerJoin(lesson, eq(lesson.id, readingAttempt.lessonId))
       .leftJoin(readingEvaluation, eq(readingEvaluation.attemptId, readingAttempt.id))
       .where(eq(readingAttempt.studentId, studentId))
-      .orderBy(desc(readingAttempt.recordedAt));
-    return Promise.all(rows.map(async row => ({
+      .orderBy(desc(readingAttempt.recordedAt), asc(readingEvaluation.versionNo));
+    const seenAttempts = new Set<string>();
+    const uniqueRows = rows.filter(row => {
+      if (seenAttempts.has(row.attempt.id)) return false;
+      seenAttempts.add(row.attempt.id);
+      return true;
+    });
+    return Promise.all(uniqueRows.map(async row => ({
       attemptId: row.attempt.id,
       evaluationId: row.evaluation?.id || null,
       lessonTitle: row.lessonTitle,
@@ -198,7 +304,20 @@ export class ReadingService {
     return audio;
   }
 
-  private callProvider(text: string, audio: Buffer): Promise<ProviderResult> {
+  private async callProvider(
+    provider: ReadingEvaluationProvider,
+    text: string,
+    audio: Buffer,
+  ): Promise<ProviderResult> {
+    if (provider === 'tencent') {
+      const result = await callTencentSoe(text, audio);
+      return { provider, rawResult: result.rawResult, sid: result.sid };
+    }
+    const result = await this.callXfyunProvider(text, audio);
+    return { provider, rawResult: result.rawResult, sid: result.sid };
+  }
+
+  private callXfyunProvider(text: string, audio: Buffer): Promise<ProviderResult> {
     const host = 'ise-api.xfyun.cn';
     const date = new Date().toUTCString();
     const signature = createHmac('sha256', process.env.XFYUN_API_SECRET!)
@@ -230,7 +349,11 @@ export class ReadingService {
             finish(new Error(`讯飞未完成评测（错误码 ${Number(data.code)}），请检查额度或录音。`));
           } else if (data.data?.status === 2) {
             if (!data.data.data) finish(new Error('讯飞未返回有效结果，请重新录音。'));
-            else finish(undefined, { xml: Buffer.from(data.data.data, 'base64').toString('utf8'), sid: data.sid });
+            else finish(undefined, {
+              provider: 'xfyun',
+              rawResult: Buffer.from(data.data.data, 'base64').toString('utf8'),
+              sid: data.sid,
+            });
           }
         } catch {
           finish(new Error('讯飞返回的数据无法解析，请重试。'));

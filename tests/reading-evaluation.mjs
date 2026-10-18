@@ -117,6 +117,27 @@ test('a level-3 phone warning on any character is shown as a reading error', () 
   assert.deepEqual(issues[0].labels, ['字音需再听一次']);
 });
 
+test('a high-confidence issue on a non-target character lowers read-accurately stars', () => {
+  const words = [
+    word('秋', 0),
+    word('天', 1, { phones: [{ error: 1, level: 3 }] }),
+    word('气', 2),
+  ];
+  const issues = buildConfidentIssues({ words, aligned: true, rubric: autumnRubric });
+  const goals = buildLessonGoals({
+    words,
+    scores: {},
+    aligned: true,
+    text: '秋天气',
+    confidentIssues: issues,
+    rubric: autumnRubric,
+  });
+
+  assert.equal(goals.accuracy.stars, 2);
+  assert.equal(goals.accuracy.count, '2/3处读准确');
+  assert.match(goals.accuracy.practice, /天/);
+});
+
 test('a severe phone warning on an Autumn pronunciation target remains actionable', () => {
   const words = [
     word('秋', 0, { phones: [{ error: 1, level: 3 }] }),
@@ -338,6 +359,25 @@ test('teacher comment covers all three dimensions and leads with encouragement',
   assert.match(comment.text, /一群读四声/);
   assert.match(comment.text, /听一听.*自己的回放.*核实/);
   assert.equal(comment.dimension, 'delivery');
+});
+
+test('teacher comment practices the lowest-rated dimension instead of the first issue', () => {
+  const report = {
+    goals: {
+      accuracy: { stars: 2, good: '大部分字音清楚', practice: '再练：凉' },
+      natural: { stars: 3, good: '三处轻声较自然', practice: '继续保持' },
+      delivery: { stars: 1, good: '两处变调到位', practice: '再练：第一处“一会儿”读二声 yí' },
+    },
+    issues: [
+      { word: '凉', labels: ['字音需再听一次'], start: 1, end: 1.3 },
+      { word: '一', labels: ['第一处“一会儿”的“一”声调需再听'], start: 4, end: 4.2 },
+    ],
+  };
+  const comment = buildTeacherComment(report);
+
+  assert.equal(comment.dimension, 'delivery');
+  assert.match(comment.text, /最值得再练的是读到位/);
+  assert.match(comment.text, /第一处“一会儿”/);
 });
 
 test('teacher comment does not promise a replay when there is no concrete issue', () => {

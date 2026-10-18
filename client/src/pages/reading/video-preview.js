@@ -333,7 +333,7 @@ export function setupIllustrationDubbing({
           <button class="secondary" type="button" data-dubbing-next>下一页 →</button>
         </div>
         <div class="dubbing-finish-actions">
-          <button class="primary dubbing-evaluate" type="button" data-dubbing-evaluate disabled>提交讯飞评测</button>
+          <button class="primary dubbing-evaluate" type="button" data-dubbing-evaluate disabled>提交评测</button>
           <button class="secondary dubbing-compose" type="button" data-dubbing-compose disabled>✦ 合成朗读视频</button>
         </div>
       </div>
@@ -425,7 +425,7 @@ export function setupIllustrationDubbing({
     recordButton.textContent = currentClip ? '● 重新录这一页' : '● 开始录这一页';
     evaluateButton.disabled = completed !== totalPages || evaluating;
     composeButton.disabled = completed !== totalPages || evaluating;
-    evaluateButton.textContent = evaluating ? '正在提交讯飞…' : '提交讯飞评测';
+    evaluateButton.textContent = evaluating ? '正在评测…' : '提交评测';
     composeButton.textContent = completed === totalPages ? '✦ 合成朗读视频' : `还有 ${totalPages - completed} 页未录`;
     dots.innerHTML = `<button type="button" aria-label="封面" data-dubbing-page="-1" class="${isCover ? 'active ' : ''}${coverClip ? 'done' : ''}"><span>${coverClip ? '✓' : '秋'}</span></button>` + autumnScenes.map((_, index) => `<button type="button" aria-label="第 ${index + 2} 页" data-dubbing-page="${index}" class="${index === currentIndex ? 'active ' : ''}${clips[index] ? 'done' : ''}"><span>${clips[index] ? '✓' : index + 2}</span></button>`).join('');
     setStatus(currentClip ? `这一页已录好 · ${formatSeconds(currentClip.duration)}` : isCover ? '封面还没有配音，请先读出课题“秋天”。' : '这一页还没有配音。');
@@ -592,12 +592,12 @@ export function setupIllustrationDubbing({
     stopAudio();
     evaluating = true;
     render();
-    setStatus('正在合并五页正文配音并提交讯飞评测；封面不计分。');
+    setStatus('正在合并五页正文配音，请选择评测方式；封面不计分。');
     let errorMessage = '';
     try {
       await onEvaluate({ coverClip, clips: clips.slice() });
     } catch (error) {
-      errorMessage = error?.message || '讯飞评测失败，五页录音已保留，可以重试。';
+      errorMessage = error?.message || '评测失败，五页录音已保留，可以重试。';
     } finally {
       evaluating = false;
       if (dialog.open) {
