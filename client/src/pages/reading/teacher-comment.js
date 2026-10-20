@@ -1,8 +1,17 @@
-const dimensions = [
+const legacyDimensions = [
   { key: 'accuracy', label: '读准确' },
   { key: 'natural', label: '读自然' },
   { key: 'delivery', label: '读到位' },
 ];
+
+const twoDimensions = [
+  { key: 'fluency', label: '读通顺' },
+  { key: 'correctness', label: '读正确' },
+];
+
+const dimensionsFor = report => report?.goals?.fluency && report?.goals?.correctness
+  ? twoDimensions
+  : legacyDimensions;
 
 const scoreText = stars => Number.isFinite(stars) ? `${stars}颗星` : '待复核';
 
@@ -11,8 +20,11 @@ function dimensionComment(dimension, goal) {
   return `${dimension.label}：${scoreText(goal?.stars)}，${detail}`;
 }
 
-function issueDimension(issue) {
+function issueDimension(issue, report) {
   const labels = issue?.labels?.join('') || '';
+  if (report?.goals?.fluency && report?.goals?.correctness) {
+    return /停顿|断句|节奏/u.test(labels) ? 'fluency' : 'correctness';
+  }
   if (/轻声/u.test(labels)) return 'natural';
   if (/声调|“一”/u.test(labels)) return 'delivery';
   if (/停顿|断句|节奏/u.test(labels)) return 'natural';
@@ -29,8 +41,9 @@ const playable = issue => Number.isFinite(issue?.start)
   && issue.end > issue.start;
 
 export function selectPracticeIssue(report) {
+  const dimensions = dimensionsFor(report);
   const candidates = (report?.issues || [])
-    .map((issue, index) => ({ issue, index, dimension: issueDimension(issue) }))
+    .map((issue, index) => ({ issue, index, dimension: issueDimension(issue, report) }))
     .filter(candidate => playable(candidate.issue));
   if (!candidates.length) return null;
   const dimensionOrder = new Map(dimensions.map((dimension, index) => [dimension.key, index]));
@@ -51,19 +64,50 @@ export function selectPracticeIssue(report) {
 
 export function buildTeacherSpeechKeys(report) {
   if (!report?.goals) return [];
+  const dimensions = dimensionsFor(report);
   const keys = ['intro', ...dimensions.map(dimension =>
     `${dimension.key}-${spokenStar(report.goals[dimension.key]?.stars)}`)];
   const concreteIssue = selectPracticeIssue(report);
   if (!concreteIssue) return [...keys, 'all-clear'];
-  return [...keys, `practice-${issueDimension(concreteIssue) || 'general'}`];
+  return [...keys, `practice-${issueDimension(concreteIssue, report) || 'general'}`];
+}
+
+function twoDimensionComment(report) {
+  const fluencyStars = report.goals.fluency?.stars;
+  const correctnessStars = report.goals.correctness?.stars;
+  const fluency = fluencyStars === 3
+    ? '你有自然段意识，每段读得通顺'
+    : fluencyStars === 2
+      ? '你知道自然段之间要停一停，大部分语句读得很通顺'
+      : '自然段之间停一停，把每段连起来读，会更通顺';
+  const correctness = correctnessStars === 3
+    ? '重点字读音准，“一”的变调和轻声“了”都读到位'
+    : correctnessStars === 2
+      ? '大部分重点字读音准，“一”的变调和轻声“了”再听一听会更好'
+      : '跟着示范再练重点字、“一”的变调和轻声“了”';
+  const concreteIssue = selectPracticeIssue(report);
+  if (!concreteIssue) {
+    return {
+      text: `你敢于完整读出来，就是成功的第一步！${fluency}；${correctness}。真棒，优秀的小小配音员！`,
+      dimension: null,
+    };
+  }
+  const dimension = issueDimension(concreteIssue, report);
+  const word = concreteIssue.word ? `“${concreteIssue.word}”这一处` : '这个小地方';
+  return {
+    text: `你敢于完整读出来，就是成功的第一步！${fluency}；${correctness}。再听听自己的${word}，读一遍，你会更棒！`,
+    dimension,
+  };
 }
 
 export function buildTeacherComment(report) {
   if (!report?.goals) return { text: '先夸夸你：愿意开口朗读，就是很棒的开始。', dimension: null };
+  if (report.goals.fluency && report.goals.correctness) return twoDimensionComment(report);
+  const dimensions = dimensionsFor(report);
   const scored = dimensions.map(dimension => ({ ...dimension, goal: report.goals[dimension.key] }));
   const summary = scored.map(dimension => dimensionComment(dimension, dimension.goal)).join('。');
   const concreteIssue = selectPracticeIssue(report);
-  const dimension = issueDimension(concreteIssue);
+  const dimension = issueDimension(concreteIssue, report);
   const praise = '愿意认真读完整篇课文，就是很棒的开始';
   if (!concreteIssue) {
     return {

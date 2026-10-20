@@ -215,7 +215,7 @@ export class ClassroomService {
       0,
     );
     const needsHelpCount = completedStudents.filter(student =>
-      [student.accuracyStars, student.naturalStars, student.deliveryStars].some(stars => stars !== null && stars < 2)
+      [student.accuracyStars, student.naturalStars].some(stars => stars !== null && stars < 2)
       || (student.issueCount || 0) > 0,
     ).length;
     const lessons = await Promise.all(lessonRows.map(async item => {

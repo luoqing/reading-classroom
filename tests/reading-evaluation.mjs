@@ -280,6 +280,33 @@ test('Autumn rates neutral 了 under natural and 一 tone changes under delivery
   assert.equal(goals.delivery.issues.length, 0);
 });
 
+test('Autumn exposes two ratings with the requested sub-points', () => {
+  const words = [
+    ...deliveryWords(),
+    word('秋', 8, { leadingPause: .4 }),
+    word('气', 9),
+  ];
+  const goals = buildLessonGoals({
+    words,
+    scores: { fluency_score: 95 },
+    aligned: true,
+    text: '一一一一一了了了\n\n秋气',
+    confidentIssues: [],
+    rubric: autumnRubric,
+  });
+
+  assert.equal(goals.fluency.stars, 3);
+  assert.equal(goals.correctness.stars, 3);
+  assert.deepEqual(
+    goals.fluency.details.map(detail => detail.label),
+    ['自然段停顿', '每段读通顺'],
+  );
+  assert.deepEqual(
+    goals.correctness.details.map(detail => detail.label),
+    ['重点字', '“一”的变调', '轻声“了”'],
+  );
+});
+
 test('Autumn delivery points to 一群 when its 一 is not fourth tone', () => {
   const goals = buildLessonGoals({
     words: deliveryWords({ tones: [2, 1, 2, 2, 1] }),
@@ -393,6 +420,50 @@ test('teacher comment does not promise a replay when there is no concrete issue'
 
   assert.doesNotMatch(comment.text, /回放/);
   assert.equal(comment.dimension, null);
+});
+
+test('two-dimension teacher comment is warm, concrete, child-friendly, and concise', () => {
+  const report = {
+    goals: {
+      fluency: {
+        stars: 3,
+        good: '自然段之间都有明显停顿；每段语句读得通顺',
+      },
+      correctness: {
+        stars: 3,
+        good: '重点字 9/9，轻声 3/3，“一”的变调 5/5',
+      },
+    },
+    issues: [],
+  };
+  const comment = buildTeacherComment(report);
+
+  assert.match(comment.text, /^你敢于完整读出来，就是成功的第一步！/u);
+  assert.match(comment.text, /自然段/u);
+  assert.match(comment.text, /重点字/u);
+  assert.match(comment.text, /轻声/u);
+  assert.match(comment.text, /“一”的变调/u);
+  assert.ok([...comment.text].length <= 100);
+  assert.equal(comment.dimension, null);
+});
+
+test('two-dimension teacher speech uses newly generated clips', () => {
+  const report = {
+    goals: {
+      fluency: { stars: 2 },
+      correctness: { stars: 1 },
+    },
+    issues: [{ labels: ['轻声“了”稍拖长'], start: 1, end: 2 }],
+  };
+
+  const speechKeys = buildTeacherSpeechKeys(report);
+  assert.deepEqual(speechKeys, [
+    'intro',
+    'fluency-2',
+    'correctness-1',
+    'practice-correctness',
+  ]);
+  assert.ok(speechKeys.every(key => teacherSpeechClips[key]?.endsWith('.mp3')));
 });
 
 test('spoken teacher comment covers accuracy, naturalness, and delivery in order', () => {

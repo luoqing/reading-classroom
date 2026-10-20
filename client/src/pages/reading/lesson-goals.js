@@ -7,6 +7,10 @@ const dpLabels = new Map([
 
 const number = value => Number.isFinite(value) ? value : null;
 const starFromRatio = (passed, total) => total <= 0 ? null : passed === total ? 3 : passed / total >= .5 ? 2 : 1;
+const averageStars = goals => {
+  const values = goals.map(goal => goal?.stars).filter(Number.isFinite);
+  return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
+};
 
 function mainSyllable(word) {
   return word?.syllables?.find(syllable => syllable.type === 'paper' && syllable.symbol);
@@ -133,6 +137,8 @@ function accuracyGoal(words, confidentIssues, targets) {
         ? `再练：${failed.map(result => `${result.char}（${result.reading}）`).join('、')}`
         : '继续保持每个字都读清楚、读完整',
     issues: [],
+    targetPassedCount: passed.length,
+    targetTotalCount: results.length,
   };
 }
 
@@ -203,6 +209,94 @@ function deliveryGoal(words, delivery) {
   };
 }
 
+function paragraphBoundaries(text) {
+  const paragraphs = text.split(/\n\s*\n/u);
+  let position = 0;
+  return paragraphs.slice(0, -1).map(paragraph => {
+    position += (paragraph.match(/\p{Script=Han}/gu) || []).length;
+    return position;
+  });
+}
+
+function paragraphGoal(text, words, aligned) {
+  if (!aligned) {
+    return {
+      stars: null,
+      count: '自然段停顿待复核',
+      good: '逐字结果未对齐，暂不自动判断自然段停顿',
+      practice: '请回听自然段之间有没有明显停顿',
+      issues: [],
+    };
+  }
+  const results = paragraphBoundaries(text)
+    .map(position => words.find(word => word.position === position))
+    .filter(Boolean)
+    .map(word => ({ word, passed: (number(word.leadingPause) ?? 0) >= .3 }));
+  const passed = results.filter(result => result.passed);
+  const failed = results.filter(result => !result.passed);
+  return {
+    stars: starFromRatio(passed.length, results.length),
+    count: `${passed.length}/${results.length}处自然段停顿`,
+    good: passed.length === results.length
+      ? '自然段之间都有明显停顿'
+      : `${passed.length}处自然段切换有明显停顿`,
+    practice: failed.length
+      ? `再练：${failed.length}处自然段之间停一停再读`
+      : '继续保持自然段之间的清楚停顿',
+    issues: failed.map(result => timedIssue(result.word, '自然段之间停顿稍短')).filter(Boolean),
+    passedCount: passed.length,
+    totalCount: results.length,
+  };
+}
+
+function fluencyGoal({ text, words, aligned, score }) {
+  const paragraphs = paragraphGoal(text, words, aligned);
+  const sentenceStars = scoreStars(score);
+  const sentences = {
+    stars: sentenceStars,
+    count: sentenceStars === null ? '每段通顺待复核' : '整篇连贯度',
+    good: sentenceStars === 3
+      ? '每段语句读得通顺'
+      : sentenceStars === 2
+        ? '大部分语句读得比较通顺'
+        : '愿意完整读下来，就是很好的开始',
+    practice: sentenceStars === 3 ? '继续保持连贯朗读' : '放慢一点，把每句话连起来读',
+    issues: [],
+  };
+  const stars = averageStars([paragraphs, sentences]);
+  return {
+    stars,
+    count: stars === null ? '读通顺待复核' : '自然段与整篇连贯度',
+    good: [paragraphs.good, sentences.good].join('；'),
+    practice: [paragraphs, sentences].filter(goal => goal.stars !== null && goal.stars < 3)
+      .map(goal => goal.practice.replace(/^再练：/u, '')).join('；') || '继续保持自然段清楚、语句连贯',
+    issues: paragraphs.issues,
+    details: [
+      { label: '自然段停顿', ...paragraphs },
+      { label: '每段读通顺', ...sentences },
+    ],
+  };
+}
+
+function correctnessGoal(accuracy, neutral, delivery) {
+  const stars = averageStars([accuracy, neutral, delivery]);
+  const practiceGoals = [accuracy, neutral, delivery]
+    .filter(goal => goal.stars !== null && goal.stars < 3);
+  return {
+    stars,
+    count: stars === null ? '读正确待复核' : '重点字、轻声和变调',
+    good: `重点字 ${accuracy.targetPassedCount}/${accuracy.targetTotalCount}，“一”的变调 ${delivery.passedCount}/${delivery.totalCount}，轻声“了” ${neutral.passedCount}/${neutral.totalCount}`,
+    practice: practiceGoals.map(goal => goal.practice.replace(/^再练：/u, '')).join('；')
+      || '重点字、轻声和“一”的变调都读得很准确',
+    issues: [...accuracy.issues, ...neutral.issues, ...delivery.issues],
+    details: [
+      { label: '重点字', ...accuracy },
+      { label: '“一”的变调', ...delivery },
+      { label: '轻声“了”', ...neutral },
+    ],
+  };
+}
+
 const scoreStars = score => score === null ? null : score >= 90 ? 3 : score >= 70 ? 2 : 1;
 
 function expressionGoal(score, delivery, aligned) {
@@ -224,11 +318,25 @@ export function buildLessonGoals({ words, scores, aligned, text, confidentIssues
     const deliveryRubric = rubric?.delivery || {};
     const hasSoundTargets = (deliveryRubric.yiTargets?.length || 0) > 0;
     const delivery = hasSoundTargets ? deliveryGoal(words, deliveryRubric) : expressionGoal(scores.tone_score, deliveryRubric, aligned);
-    return { targeted: true, accuracy, natural, delivery, issues: [...accuracy.issues, ...natural.issues, ...delivery.issues] };
+    const fluency = fluencyGoal({ text, words, aligned, score: scores.fluency_score });
+    const correctness = correctnessGoal(accuracy, natural, delivery);
+    return {
+      targeted: true,
+      fluency,
+      correctness,
+      accuracy,
+      natural,
+      delivery,
+      issues: [...fluency.issues, ...correctness.issues],
+    };
   }
   const fallback = (score, label) => ({ stars: scoreStars(score), count: score === null ? '暂未评分' : '整篇参考', good: score === null ? '本轮没有可用结果' : `${label}参考整篇讯飞评分`, practice: aligned ? '可结合原文中的逐字提示练习' : '逐字结果未能对齐，请回听确认' });
+  const fluency = fallback(scores.fluency_score, '读通顺');
+  const correctness = fallback(scores.accuracy_score, '读正确');
   return {
     targeted: false,
+    fluency,
+    correctness,
     accuracy: fallback(scores.accuracy_score, '读准确'),
     natural: fallback(scores.fluency_score, '读自然'),
     delivery: fallback(scores.tone_score, '读到位'),

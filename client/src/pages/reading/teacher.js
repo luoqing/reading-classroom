@@ -119,7 +119,7 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
     const comment = buildTeacherComment(report);
     setCheer(clipName.split('-')[0]);
     $('teacherWords').textContent = report ? comment.text : clip.text;
-    $('teacherMode').textContent = report ? '三维讲评 · 自动播放' : '见面试听 · 不是评测结果';
+    $('teacherMode').textContent = report ? '两项讲评 · 自动播放' : '见面试听 · 不是评测结果';
     $('teacherFocus').hidden = true;
     $('teacherWord').textContent = focus?.word || '';
     $('teacherPractice').textContent = focus ? '▷ 回听重点句' : '回到课文';

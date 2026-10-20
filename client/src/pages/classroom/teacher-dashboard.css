@@ -328,7 +328,7 @@
   font-size: 12px;
   font-weight: 800;
 }
-.dimension-summary { padding: 14px 18px; border-block: 1px solid #ebe7da; background: rgba(249, 247, 238, .75); display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.dimension-summary { padding: 14px 18px; border-block: 1px solid #ebe7da; background: rgba(249, 247, 238, .75); display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 .dimension-bar { min-width: 0; }
 .dimension-bar > div { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
 .dimension-bar strong { font: 800 12px Georgia, serif; }
@@ -343,7 +343,7 @@
 .teacher-table-head,
 .student-row {
   display: grid;
-  grid-template-columns: minmax(155px, 1.3fr) minmax(125px, 1fr) 74px 74px 74px minmax(112px, .9fr) 48px;
+  grid-template-columns: minmax(155px, 1.3fr) minmax(125px, 1fr) 84px 84px minmax(112px, .9fr) 48px;
   gap: 10px;
   align-items: center;
 }
@@ -510,7 +510,7 @@
 .lesson-material-page > div > small { color: #8d948d; font-size: 10px; font-weight: 800; }
 .lesson-material-page > div > p:not(.lesson-page-pinyin) { margin: 9px 0; color: var(--teacher-ink); font-size: 14px; line-height: 1.8; }
 .lesson-page-pinyin { margin: 12px 0 4px; color: #9a7650; font: 11px/1.7 Georgia, serif; }
-.lesson-rubric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.lesson-rubric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 .lesson-rubric-grid article { padding: 14px; border-radius: 14px; background: #f0f3eb; }
 .lesson-rubric-grid strong { color: var(--teacher-green); }
 .lesson-rubric-grid p { margin: 8px 0 0; color: #647168; font-size: 11px; line-height: 1.7; }

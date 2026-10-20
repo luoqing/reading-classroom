@@ -1,7 +1,15 @@
 import { assetRoot } from './assets.js';
 
 export const teacherSpeechClips = {
-  intro: assetRoot + '1879288836555817.mp3',
+  intro: assetRoot + '1879570705174539.mp3',
+  'fluency-1': assetRoot + '1879570706372939.mp3',
+  'fluency-2': assetRoot + '1879570705174555.mp3',
+  'fluency-3': assetRoot + '1879570706374795.mp3',
+  'fluency-review': assetRoot + '1879570749994091.mp3',
+  'correctness-1': assetRoot + '1879570749994059.mp3',
+  'correctness-2': assetRoot + '1879570706374811.mp3',
+  'correctness-3': assetRoot + '1879570723374218.mp3',
+  'correctness-review': assetRoot + '1879570706372971.mp3',
   'accuracy-1': assetRoot + '1879288711764233.mp3',
   'accuracy-2': assetRoot + '1879288709002265.mp3',
   'accuracy-3': assetRoot + '1879288711765033.mp3',
@@ -18,5 +26,7 @@ export const teacherSpeechClips = {
   'practice-natural': assetRoot + '1879288877263881.mp3',
   'practice-delivery': assetRoot + '1879288870945801.mp3',
   'practice-general': assetRoot + '1879288870945833.mp3',
-  'all-clear': assetRoot + '1879288731595803.mp3',
+  'practice-fluency': assetRoot + '1879570749994075.mp3',
+  'practice-correctness': assetRoot + '1879570706372987.mp3',
+  'all-clear': assetRoot + '1879570706372955.mp3',
 };
