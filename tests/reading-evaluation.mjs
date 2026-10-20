@@ -466,6 +466,18 @@ test('two-dimension teacher speech uses newly generated clips', () => {
   assert.ok(speechKeys.every(key => teacherSpeechClips[key]?.endsWith('.mp3')));
 });
 
+test('the result exposes summary replay and keeps the minimized playing label compact', () => {
+  const readingSource = fs.readFileSync(new URL('../client/src/pages/reading/reading.js', import.meta.url), 'utf8');
+  const readingStyles = fs.readFileSync(new URL('../client/src/pages/reading/reading.css', import.meta.url), 'utf8');
+
+  assert.match(readingSource, /data-teacher-summary/);
+  assert.match(readingSource, /teacher\.show\(activeReport\)/);
+  assert.match(
+    readingStyles,
+    /\.teacher-dialog\.minimized \.teacher-portrait\.speaking::after\{top:auto;[^}]*font-size:8px/,
+  );
+});
+
 test('spoken teacher comment covers accuracy, naturalness, and delivery in order', () => {
   const report = {
     goals: {
