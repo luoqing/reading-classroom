@@ -516,6 +516,22 @@ test('the result exposes summary replay and keeps the minimized playing label co
   );
 });
 
+test('the evaluation dialog recommends Xfyun by default', () => {
+  const readingSource = fs.readFileSync(
+    new URL('../client/src/pages/reading/reading.js', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(
+    readingSource,
+    /class="recommended" data-evaluation-provider="xfyun"/u,
+  );
+  assert.doesNotMatch(
+    readingSource,
+    /class="recommended" data-evaluation-provider="both"/u,
+  );
+});
+
 test('spoken teacher comment covers accuracy, naturalness, and delivery in order', () => {
   const report = {
     goals: {
