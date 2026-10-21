@@ -77,9 +77,9 @@ test('picture-book dubbing can show or hide first-grade pinyin', () => {
   assert.equal(withoutPinyin, '一会儿排成个“人”字，');
 });
 
-test('pinyin uses the primary-school forms of a and g', () => {
-  assert.equal(primarySchoolPinyin('nǎ zuò fáng zi zuì piào liang'), 'nɑ̌ zuò fɑ́nɡ zi zuì piɑ̀o liɑnɡ');
-  assert.equal(primarySchoolPinyin('gāo ā á ǎ à'), 'ɡɑ̄o ɑ̄ ɑ́ ɑ̌ ɑ̀');
+test('pinyin keeps standard spelling and normalizes tone marks to complete glyphs', () => {
+  assert.equal(primarySchoolPinyin('nǎ zuò fáng zi zuì piào liang'), 'nǎ zuò fáng zi zuì piào liang');
+  assert.equal(primarySchoolPinyin('ga\u0304o a\u0304 a\u0301 a\u030c a\u0300'), 'gāo ā á ǎ à');
 });
 
 test('Autumn keeps its picture-book dubbing entry when its pages use the video master', () => {
@@ -97,7 +97,7 @@ test('a teacher-published page can render its own first-grade pinyin', () => {
     pinyin: [{ text: '哪座房子最漂亮？', pinyin: 'nǎ zuò fáng zi zuì piào liang' }],
   };
 
-  assert.match(renderPageDubbingScript(page), /<ruby>哪<rt>nɑ̌<\/rt><\/ruby>/u);
-  assert.match(renderPageDubbingScript(page), /<ruby>亮<rt>liɑnɡ<\/rt><\/ruby>/u);
+  assert.match(renderPageDubbingScript(page), /<ruby>哪<rt>nǎ<\/rt><\/ruby>/u);
+  assert.match(renderPageDubbingScript(page), /<ruby>亮<rt>liang<\/rt><\/ruby>/u);
   assert.equal(renderPageDubbingScript(page, false), page.text);
 });
