@@ -1,8 +1,19 @@
 import WebSocket from 'ws';
-import { BadGatewayException, BadRequestException, HttpException, Inject, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  HttpException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
 import { DRIZZLE_DATABASE, FileService, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { createHmac } from 'node:crypto';
+import { firstValueFrom } from 'rxjs';
 import type {
   EvaluationReportRequest,
   GuestReadingRequest,
@@ -30,15 +41,69 @@ interface ProviderBatchResult {
   errors: ProviderEvaluationError[];
 }
 
+const TEACHER_SPEECH_ROOT = 'https://bytedance.feishuapp.cn/spark/app/'
+  + 'app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/';
+
+const TEACHER_SPEECH_FILES: Record<string, string> = {
+  intro: '1879581960034618.mp3',
+  'fluency-1': '1879581941482555.mp3',
+  'fluency-2': '1879581941482523.mp3',
+  'fluency-3': '1879581938221194.mp3',
+  'fluency-review': '1879581941482507.mp3',
+  'correctness-1': '1879581960034586.mp3',
+  'correctness-2': '1879581938220218.mp3',
+  'correctness-3': '1879581938220186.mp3',
+  'correctness-review': '1879581941482539.mp3',
+  'accuracy-1': '1879288711764233.mp3',
+  'accuracy-2': '1879288709002265.mp3',
+  'accuracy-3': '1879288711765033.mp3',
+  'accuracy-review': '1879288719748155.mp3',
+  'natural-1': '1879288849802331.mp3',
+  'natural-2': '1879288855539723.mp3',
+  'natural-3': '1879288842819691.mp3',
+  'natural-review': '1879288855542859.mp3',
+  'delivery-1': '1879288829616266.mp3',
+  'delivery-2': '1879288829617354.mp3',
+  'delivery-3': '1879288818236442.mp3',
+  'delivery-review': '1879288836554761.mp3',
+  'practice-accuracy': '1879288855542875.mp3',
+  'practice-natural': '1879288877263881.mp3',
+  'practice-delivery': '1879288870945801.mp3',
+  'practice-general': '1879288870945833.mp3',
+  'practice-fluency': '1879581941483595.mp3',
+  'practice-correctness': '1879581938220202.mp3',
+  'all-clear': '1879581960034570.mp3',
+};
+
 @Injectable()
 export class ReadingService {
+  private readonly logger = new Logger(ReadingService.name);
   private active = 0;
   private started: number[] = [];
 
   constructor(
     @Inject(DRIZZLE_DATABASE) private readonly db: PostgresJsDatabase,
     private readonly files: FileService,
+    private readonly http: HttpService,
   ) {}
+
+  async teacherSpeech(key: string): Promise<Buffer> {
+    const fileName: string | undefined = TEACHER_SPEECH_FILES[key];
+    if (!fileName) throw new NotFoundException('小秋评语音频不存在。');
+    try {
+      const response = await firstValueFrom(this.http.get<ArrayBuffer>(
+        TEACHER_SPEECH_ROOT + fileName,
+        { responseType: 'arraybuffer' },
+      ));
+      return Buffer.from(response.data);
+    } catch (error) {
+      this.logger.error(
+        `Failed to load teacher speech clip: ${key}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new BadGatewayException('小秋评语音频暂时不可用，请稍后重试。');
+    }
+  }
 
   configured(provider: ReadingEvaluationProvider = 'xfyun'): boolean {
     if (provider === 'tencent') return configuredTencentSoe();

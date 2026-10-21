@@ -13,6 +13,10 @@ import {
   buildTeacherSpeechKeys,
 } from '../client/src/pages/reading/teacher-comment.js';
 import { teacherSpeechClips } from '../client/src/pages/reading/teacher-speech-clips.js';
+import {
+  encodeWav,
+  findAudibleRange,
+} from '../client/src/pages/reading/teacher-audio.js';
 
 const word = (content, position, options = {}) => ({
   content,
@@ -464,6 +468,40 @@ test('two-dimension teacher speech uses newly generated clips', () => {
     'practice-correctness',
   ]);
   assert.ok(speechKeys.every(key => teacherSpeechClips[key]?.endsWith('.mp3')));
+});
+
+test('teacher speech trimming removes long silent edges but keeps short padding', () => {
+  const samples = new Float32Array(1_000);
+  samples.fill(0.2, 200, 700);
+
+  const range = findAudibleRange(samples, 1_000);
+
+  assert.deepEqual(range, { start: 175, end: 760 });
+});
+
+test('teacher speech merge emits a playable PCM WAV header', () => {
+  const wav = encodeWav([new Float32Array([0, 0.5, -0.5, 0])], 24_000);
+  const view = new DataView(wav);
+  const text = (offset, length) => String.fromCharCode(
+    ...new Uint8Array(wav, offset, length),
+  );
+
+  assert.equal(text(0, 4), 'RIFF');
+  assert.equal(text(8, 4), 'WAVE');
+  assert.equal(view.getUint16(22, true), 1);
+  assert.equal(view.getUint32(24, true), 24_000);
+  assert.equal(view.getUint32(40, true), 8);
+});
+
+test('teacher summary playback prepares one proxied merged audio source with fallback', () => {
+  const teacherSource = fs.readFileSync(
+    new URL('../client/src/pages/reading/teacher.js', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(teacherSource, /buildMergedSpeechUrl\(keys, getTeacherSpeechClip\)/u);
+  assert.match(teacherSource, /speechQueue = \[mergedUrl\]/u);
+  assert.match(teacherSource, /回退分段播放/u);
 });
 
 test('the result exposes summary replay and keeps the minimized playing label compact', () => {

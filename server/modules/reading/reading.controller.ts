@@ -1,4 +1,16 @@
-import { Body, Controller, Get, Header, HttpCode, Inject, Param, Patch, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  HttpCode,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Req,
+  StreamableFile,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import type { EvaluationReportRequest, GuestReadingRequest, GuestReadingResult, ReadingRequest, ReadingResult } from '../../../shared/api.interface';
 import { AuthService } from '../auth/auth.service';
@@ -15,6 +27,13 @@ export class ReadingController {
   @Header('Cache-Control', 'no-store')
   health(): { configured: boolean } {
     return { configured: this.reading.configured() };
+  }
+
+  @Get('teacher-speech/:key')
+  @Header('Cache-Control', 'public, max-age=86400')
+  @Header('Content-Type', 'audio/mpeg')
+  async teacherSpeech(@Param('key') key: string): Promise<StreamableFile> {
+    return new StreamableFile(await this.reading.teacherSpeech(key));
   }
 
   @Post('evaluate')

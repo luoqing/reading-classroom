@@ -119,3 +119,13 @@ export async function getReadingHistory() {
   });
   return response.data.items;
 }
+
+export async function getTeacherSpeechClip(key: string): Promise<ArrayBuffer> {
+  const response = await axiosForBackend<ArrayBuffer>({
+    url: `/api/reading/teacher-speech/${encodeURIComponent(key)}`,
+    method: 'GET',
+    responseType: 'arraybuffer',
+    meta: { autoJumpToLogin: false },
+  });
+  return response.data;
+}

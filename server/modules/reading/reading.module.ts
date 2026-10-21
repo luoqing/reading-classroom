@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
+import { HttpModule } from '@nestjs/axios';
 import { ReadingController } from './reading.controller';
 import { ReadingService } from './reading.service';
 
-@Module({ controllers: [ReadingController], providers: [ReadingService] })
+@Module({
+  imports: [HttpModule.register({ timeout: 15000, maxRedirects: 3 })],
+  controllers: [ReadingController],
+  providers: [ReadingService],
+})
 export class ReadingModule {}

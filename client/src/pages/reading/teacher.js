@@ -1,3 +1,5 @@
+import { logger } from '@lark-apaas/client-toolkit/logger';
+import { getTeacherSpeechClip } from '../../api/reading';
 import { teacherClips } from './teacher-clips';
 import {
   buildTeacherComment,
@@ -5,6 +7,7 @@ import {
   selectPracticeIssue,
 } from './teacher-comment';
 import { teacherSpeechClips } from './teacher-speech-clips';
+import { buildMergedSpeechUrl } from './teacher-audio';
 import { assetRoot, readingAssets } from './assets';
 
 const poses = readingAssets.teacher;
@@ -39,6 +42,8 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
   let replayAfterComment = false;
   let speechQueue = [];
   let speechIndex = 0;
+  let speechVersion = 0;
+  let speechPreparation = Promise.resolve();
   let unlocking = false;
   let unlocked = false;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -79,19 +84,38 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
   const setSpeechQueue = urls => {
     speechQueue = urls.filter(Boolean);
     speechIndex = 0;
+    speechVersion += 1;
+    speechPreparation = Promise.resolve();
     audio.src = speechQueue[0] || '';
+  };
+  const setMergedSpeechQueue = (urls, keys) => {
+    setSpeechQueue(urls);
+    if (speechQueue.length < 2) return;
+    const version = speechVersion;
+    speechPreparation = buildMergedSpeechUrl(keys, getTeacherSpeechClip)
+      .then(mergedUrl => {
+        if (version !== speechVersion) return;
+        speechQueue = [mergedUrl];
+        speechIndex = 0;
+        audio.src = mergedUrl;
+      })
+      .catch(error => {
+        logger.warn('总评音频合并失败，已回退分段播放', error);
+      });
   };
   async function play() {
     if (!speechQueue.length) return;
-    if (audio.ended && speechIndex === speechQueue.length - 1) {
-      speechIndex = 0;
-      audio.src = speechQueue[0];
-    }
     const id = ++request;
     $('demoAudio').pause(); $('audio').pause();
     document.querySelectorAll('#history audio').forEach(a => a.pause());
     $('teacherAudioStatus').textContent = '正在准备语音…';
     try {
+      await speechPreparation;
+      if (id !== request || !dialog.open) return;
+      if (audio.ended && speechIndex === speechQueue.length - 1) {
+        speechIndex = 0;
+        audio.src = speechQueue[0];
+      }
       await audio.play();
       if (id !== request || !dialog.open) audio.pause();
     } catch { if (id === request) $('teacherAudioStatus').textContent = '语音未能自动播放，请点“听小秋说”重试。'; }
@@ -125,7 +149,12 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
     $('teacherPractice').textContent = focus ? '▷ 回听重点句' : '回到课文';
     const speechKeys = buildTeacherSpeechKeys(report);
     const speechUrls = speechKeys.map(key => teacherSpeechClips[key]);
-    setSpeechQueue(speechUrls.length === speechKeys.length && speechUrls.length ? speechUrls : [clip.url]);
+    setMergedSpeechQueue(
+      speechUrls.length === speechKeys.length && speechUrls.length
+        ? speechUrls
+        : [clip.url],
+      speechKeys,
+    );
     replayAfterComment = Boolean(focus);
     open();
     void play();
