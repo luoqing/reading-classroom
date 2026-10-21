@@ -82,6 +82,5 @@ body{background:radial-gradient(ellipse at 0 15%,#eabe6480,transparent 40%),radi
 /* Keep the summary replay action compact and the minimized playback state subtle. */
 .result-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}.total-comment{min-height:44px;padding:0 14px;background:#e5ecd8}.teacher-dialog.minimized .teacher-portrait.speaking::after{top:auto;right:-2px;bottom:1px;padding:2px 5px;border:0;border-radius:9px;background:#214f3e;color:#fff;font-size:8px;line-height:1.25;box-shadow:0 2px 8px #18392d26}
 @media(max-width:680px){.result-actions{width:100%;display:grid;grid-template-columns:1fr}.result-actions .teacher-comment,.result-actions .make-video{width:100%}}
-/* Use complete textbook-style pinyin glyphs so tone marks stay centered. */
-@font-face{font-family:"Textbook Pinyin";src:url("/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1879663708213499.ttf") format("truetype");font-style:normal;font-weight:400;font-display:swap}
+/* The backend signs and loads the app-stored font at runtime. */
 rt,.dubbing-script rt{font-family:"Textbook Pinyin","KaiTi","STKaiti","Kaiti SC","PingFang SC","Microsoft YaHei",sans-serif}

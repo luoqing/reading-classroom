@@ -7,7 +7,7 @@ export class LessonsController {
 
   @Get()
   async list() {
-    return { items: await this.lessons.list() };
+    return this.lessons.catalog();
   }
 
   @Get(':slug')

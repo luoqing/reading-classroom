@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { LessonView } from '@shared/api.interface';
 import markup from './markup';
 import { initializeReading } from './reading.js';
-import { getLesson, listLessons } from '../../api/lessons';
+import { getLesson, getLessonCatalog } from '../../api/lessons';
+import { loadTextbookPinyinFont } from './pinyin-font.js';
 import './reading.css';
 
 export default function ReadingPage({ persistent = false }: { persistent?: boolean }) {
@@ -12,8 +13,11 @@ export default function ReadingPage({ persistent = false }: { persistent?: boole
 
   useEffect(() => {
     let active = true;
-    listLessons()
-      .then(items => Promise.all(items.map(item => getLesson(item.slug))))
+    getLessonCatalog()
+      .then(async ({ items, pinyinFontUrl }) => {
+        await loadTextbookPinyinFont(pinyinFontUrl);
+        return Promise.all(items.map(item => getLesson(item.slug)));
+      })
       .then(values => { if (active) setLessons(values); })
       .catch(() => { if (active) setError('课文加载失败，请刷新后重试。'); });
     return () => { active = false; };

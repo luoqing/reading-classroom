@@ -9,6 +9,10 @@ import {
 } from '../client/src/pages/reading/video-preview.js';
 import { renderPageDubbingScript } from '../client/src/pages/reading/page-dubbing.js';
 import { primarySchoolPinyin } from '../client/src/pages/reading/pinyin.js';
+import {
+  loadTextbookPinyinFont,
+  TEXTBOOK_PINYIN_FONT_FAMILY,
+} from '../client/src/pages/reading/pinyin-font.js';
 
 const lessonText = '天气凉了，树叶黄了，一片片叶子从树上落下来。\n\n天那么蓝，那么高。一群大雁往南飞，一会儿排成个“人”字，一会儿排成个“一”字。\n\n啊！秋天来了！';
 const characters = lessonText.match(/\p{Script=Han}/gu) || [];
@@ -80,6 +84,40 @@ test('picture-book dubbing can show or hide first-grade pinyin', () => {
 test('pinyin keeps standard spelling and normalizes tone marks to complete glyphs', () => {
   assert.equal(primarySchoolPinyin('nǎ zuò fáng zi zuì piào liang'), 'nǎ zuò fáng zi zuì piào liang');
   assert.equal(primarySchoolPinyin('ga\u0304o a\u0304 a\u0301 a\u030c a\u0300'), 'gāo ā á ǎ à');
+});
+
+test('textbook pinyin font loads from the signed runtime URL', async () => {
+  const loadedFonts = new Set();
+  loadedFonts.add = Set.prototype.add;
+
+  class FakeFontFace {
+    constructor(family, source, descriptors) {
+      this.family = family;
+      this.source = source;
+      this.descriptors = descriptors;
+      this.status = 'unloaded';
+    }
+
+    async load() {
+      this.status = 'loaded';
+      return this;
+    }
+  }
+
+  const environment = {
+    FontFace: FakeFontFace,
+    document: { fonts: loadedFonts },
+  };
+  const signedUrl = 'https://example.com/font.ttf?sign=a%2Bb&expires=1';
+
+  assert.equal(await loadTextbookPinyinFont(signedUrl, environment), true);
+  assert.equal(loadedFonts.size, 1);
+  const [font] = loadedFonts;
+  assert.equal(font.family, TEXTBOOK_PINYIN_FONT_FAMILY);
+  assert.match(font.source, /font\.ttf\?sign=a%2Bb&expires=1/);
+  assert.deepEqual(font.descriptors, { style: 'normal', weight: '400', display: 'swap' });
+  assert.equal(await loadTextbookPinyinFont(signedUrl, environment), true);
+  assert.equal(loadedFonts.size, 1);
 });
 
 test('Autumn keeps its picture-book dubbing entry when its pages use the video master', () => {

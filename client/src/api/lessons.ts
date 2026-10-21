@@ -1,13 +1,13 @@
 import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
-import type { LessonListItem, LessonView } from '@shared/api.interface';
+import type { LessonCatalog, LessonView } from '@shared/api.interface';
 
-export async function listLessons() {
-  const response = await axiosForBackend<{ items: LessonListItem[] }>({
+export async function getLessonCatalog() {
+  const response = await axiosForBackend<LessonCatalog>({
     url: '/api/lessons',
     method: 'GET',
     meta: { autoJumpToLogin: false },
   });
-  return response.data.items;
+  return response.data;
 }
 
 export async function getLesson(slug: string) {

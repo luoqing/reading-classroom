@@ -40,6 +40,11 @@ export interface LessonListItem {
   coverUrl: string | null;
 }
 
+export interface LessonCatalog {
+  items: LessonListItem[];
+  pinyinFontUrl: string | null;
+}
+
 export interface LessonRubric {
   accuracyTargets?: { char: string; reading: string }[];
   natural?: {

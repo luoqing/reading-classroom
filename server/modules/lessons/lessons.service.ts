@@ -2,8 +2,11 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DRIZZLE_DATABASE, FileService, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
 import { asc, eq } from 'drizzle-orm';
 import { lesson, lessonPage } from '@server/database/schema';
-import type { LessonView } from '@shared/api.interface';
-import { signedStorageObjectUrl } from '@server/common/storage-url';
+import type { LessonCatalog, LessonView } from '@shared/api.interface';
+import { signedStoredFileUrl, signedStorageObjectUrl } from '@server/common/storage-url';
+
+const PINYIN_FONT_BUCKET_ID = 'bucket_aadk2myxensps';
+const PINYIN_FONT_FILE_PATH = '1879663708213499.ttf';
 
 @Injectable()
 export class LessonsService {
@@ -24,6 +27,14 @@ export class LessonsService {
       revision: row.revision,
       coverUrl: await signedStorageObjectUrl(this.files, row.coverUrl),
     })));
+  }
+
+  async catalog(): Promise<LessonCatalog> {
+    const [items, pinyinFontUrl] = await Promise.all([
+      this.list(),
+      signedStoredFileUrl(this.files, PINYIN_FONT_BUCKET_ID, PINYIN_FONT_FILE_PATH),
+    ]);
+    return { items, pinyinFontUrl };
   }
 
   async getBySlug(slug: string): Promise<LessonView> {
