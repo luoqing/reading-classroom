@@ -8,6 +8,7 @@ import {
   renderAutumnDubbingScript,
 } from '../client/src/pages/reading/video-preview.js';
 import { renderPageDubbingScript } from '../client/src/pages/reading/page-dubbing.js';
+import { primarySchoolPinyin } from '../client/src/pages/reading/pinyin.js';
 
 const lessonText = '天气凉了，树叶黄了，一片片叶子从树上落下来。\n\n天那么蓝，那么高。一群大雁往南飞，一会儿排成个“人”字，一会儿排成个“一”字。\n\n啊！秋天来了！';
 const characters = lessonText.match(/\p{Script=Han}/gu) || [];
@@ -76,6 +77,11 @@ test('picture-book dubbing can show or hide first-grade pinyin', () => {
   assert.equal(withoutPinyin, '一会儿排成个“人”字，');
 });
 
+test('pinyin uses the primary-school forms of a and g', () => {
+  assert.equal(primarySchoolPinyin('nǎ zuò fáng zi zuì piào liang'), 'nɑ̌ zuò fɑ́nɡ zi zuì piɑ̀o liɑnɡ');
+  assert.equal(primarySchoolPinyin('gāo ā á ǎ à'), 'ɡɑ̄o ɑ̄ ɑ́ ɑ̌ ɑ̀');
+});
+
 test('Autumn keeps its picture-book dubbing entry when its pages use the video master', () => {
   assert.equal(lessonHasDubbingMedia({ id: 'autumn', pages: [] }), true);
   assert.equal(lessonHasDubbingMedia({ id: 'house', pages: [] }), false);
@@ -91,7 +97,7 @@ test('a teacher-published page can render its own first-grade pinyin', () => {
     pinyin: [{ text: '哪座房子最漂亮？', pinyin: 'nǎ zuò fáng zi zuì piào liang' }],
   };
 
-  assert.match(renderPageDubbingScript(page), /<ruby>哪<rt>nǎ<\/rt><\/ruby>/u);
-  assert.match(renderPageDubbingScript(page), /<ruby>亮<rt>liang<\/rt><\/ruby>/u);
+  assert.match(renderPageDubbingScript(page), /<ruby>哪<rt>nɑ̌<\/rt><\/ruby>/u);
+  assert.match(renderPageDubbingScript(page), /<ruby>亮<rt>liɑnɡ<\/rt><\/ruby>/u);
   assert.equal(renderPageDubbingScript(page, false), page.text);
 });

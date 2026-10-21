@@ -1,3 +1,5 @@
+import { primarySchoolPinyin } from './pinyin.js';
+
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 const escapeHTML = value => String(value).replace(/[&<>"']/g, character => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -13,7 +15,7 @@ export function renderPageDubbingScript(page, showPinyin = true) {
   if (!syllables.length || hanTokens.length !== syllables.length) return escapeHTML(page?.text || '');
   let index = 0;
   return tokens.map(token => /\p{Script=Han}/u.test(token)
-    ? `<ruby>${escapeHTML(token)}<rt>${escapeHTML(syllables[index++])}</rt></ruby><wbr>`
+    ? `<ruby>${escapeHTML(token)}<rt>${escapeHTML(primarySchoolPinyin(syllables[index++]))}</rt></ruby><wbr>`
     : escapeHTML(token)).join('');
 }
 

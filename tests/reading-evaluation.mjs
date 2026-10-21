@@ -532,6 +532,34 @@ test('the evaluation dialog recommends Xfyun by default', () => {
   );
 });
 
+test('the dual-provider comparison shows star ratings instead of raw scores', () => {
+  const readingSource = fs.readFileSync(
+    new URL('../client/src/pages/reading/reading.js', import.meta.url),
+    'utf8',
+  );
+  const start = readingSource.indexOf('function providerCard(item)');
+  const end = readingSource.indexOf('function providerComparison', start);
+  const providerCardSource = readingSource.slice(start, end);
+
+  assert.ok(start >= 0 && end > start);
+  assert.match(providerCardSource, /class="provider-stars"/u);
+  assert.match(providerCardSource, /读通顺星级/u);
+  assert.match(providerCardSource, /读正确星级/u);
+  assert.doesNotMatch(providerCardSource, /scoreText|total_score|accuracy_score|fluency_score|integrity_score|provider-metrics/u);
+});
+
+test('the reading experience consistently names the teacher Xiaoqiu', () => {
+  const sources = [
+    '../client/src/pages/auth/LoginPage.tsx',
+    '../client/src/pages/reading/reading.js',
+    '../client/src/pages/reading/teacher.js',
+    '../client/src/pages/reading/teacher-clips.js',
+  ].map(path => fs.readFileSync(new URL(path, import.meta.url), 'utf8'));
+
+  assert.ok(sources.every(source => !source.includes(['小秋', '评委'].join(''))));
+  assert.match(sources.at(-1), /我是小秋，很高兴听见你的声音/u);
+});
+
 test('spoken teacher comment covers accuracy, naturalness, and delivery in order', () => {
   const report = {
     goals: {

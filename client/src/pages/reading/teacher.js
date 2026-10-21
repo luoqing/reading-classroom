@@ -74,7 +74,7 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
   minimizeButton.className = 'teacher-minimize';
   minimizeButton.type = 'button';
   minimizeButton.textContent = '− 收起';
-  minimizeButton.setAttribute('aria-label', '缩小小秋评委');
+  minimizeButton.setAttribute('aria-label', '缩小小秋');
   minimizeButton.title = '缩小为悬浮头像';
   dialog.append(minimizeButton);
   pose(false);

@@ -31,7 +31,7 @@ export default function LoginPage({ onLogin, onCancel }: { onLogin: (result: Log
       <div className="login-brand"><span><Leaf size={21} /></span>朗读小屋</div>
       <div className="login-kicker">READ · LISTEN · GROW</div>
       <h1>让每一次朗读<br />都有迹可循</h1>
-      <p>孩子开口读，小秋评委按“读通顺、读正确”给出鼓励和练习建议；老师在一个页面里看到谁需要帮助。</p>
+      <p>孩子开口读，小秋按“读通顺、读正确”给出鼓励和练习建议；老师在一个页面里看到谁需要帮助。</p>
       <div className="login-book">
         <BookOpenText size={25} />
         <div><strong>一年级语文 · 秋天</strong><span>录音、评测、回放和进步记录</span></div>

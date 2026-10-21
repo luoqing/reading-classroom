@@ -1,4 +1,5 @@
 import { readingAssets } from './assets.js';
+import { primarySchoolPinyin } from './pinyin.js';
 
 const autumnScenes = [
   {
@@ -47,7 +48,7 @@ export function renderAutumnDubbingScript(sceneIndex, showPinyin = true) {
   const content = (scene.text.match(/会儿|[\s\S]/gu) || []).map(character => {
     if (!/\p{Script=Han}/u.test(character)) return escapeHTML(character);
     const pinyin = syllables[syllableIndex++];
-    return `<ruby>${escapeHTML(character)}<rt>${pinyin}</rt></ruby><wbr>`;
+    return `<ruby>${escapeHTML(character)}<rt>${primarySchoolPinyin(pinyin)}</rt></ruby><wbr>`;
   }).join('');
   if (syllableIndex !== syllables.length) throw Error('配音文字拼音数量不匹配');
   return content;
