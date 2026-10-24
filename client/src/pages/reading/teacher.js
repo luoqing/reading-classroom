@@ -143,7 +143,7 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
     const comment = buildTeacherComment(report);
     setCheer(clipName.split('-')[0]);
     $('teacherWords').textContent = report ? comment.text : clip.text;
-    $('teacherMode').textContent = report ? '两项讲评 · 自动播放' : '见面试听 · 不是评测结果';
+    $('teacherMode').textContent = report ? '两项讲评 · 点击播放' : '见面试听 · 不是评测结果';
     $('teacherFocus').hidden = true;
     $('teacherWord').textContent = focus?.word || '';
     $('teacherPractice').textContent = focus ? '▷ 回听重点句' : '回到课文';
@@ -157,7 +157,8 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
     );
     replayAfterComment = Boolean(focus);
     open();
-    void play();
+    $('teacherReplay').textContent = '▷ 听小秋说';
+    $('teacherAudioStatus').textContent = '点“听小秋说”播放评语。';
   }
   function showSegment(segment, kind) {
     const clip = segmentClips[kind] || segmentClips.pronunciation;
@@ -171,7 +172,8 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
     setSpeechQueue([clip.url]);
     replayAfterComment = true;
     open();
-    void play();
+    $('teacherReplay').textContent = '▷ 听小秋说';
+    $('teacherAudioStatus').textContent = '点“听小秋说”播放评语。';
   }
   audio.onplay = () => { if (unlocking) return; $('teacherReplay').textContent = 'Ⅱ 暂停'; $('teacherAudioStatus').textContent = '小秋正在说…'; };
   audio.onpause = () => { if (unlocking) return; pose(false); $('teacherReplay').textContent = '▷ 再听一次'; $('teacherAudioStatus').textContent = audio.ended ? '轮到你试一试啦。' : '已暂停'; };

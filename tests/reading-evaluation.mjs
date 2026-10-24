@@ -516,6 +516,26 @@ test('the result exposes summary replay and keeps the minimized playing label co
   );
 });
 
+test('teacher comments wait for a user click on desktop and mobile', () => {
+  const teacherSource = fs.readFileSync(
+    new URL('../client/src/pages/reading/teacher.js', import.meta.url),
+    'utf8',
+  );
+  const summaryStart = teacherSource.indexOf('function show(result)');
+  const segmentStart = teacherSource.indexOf('function showSegment(segment, kind)');
+  const playbackHandlersStart = teacherSource.indexOf('audio.onplay', segmentStart);
+  const summarySource = teacherSource.slice(summaryStart, segmentStart);
+  const segmentSource = teacherSource.slice(segmentStart, playbackHandlersStart);
+
+  assert.ok(summaryStart >= 0 && segmentStart > summaryStart);
+  assert.ok(playbackHandlersStart > segmentStart);
+  assert.match(summarySource, /两项讲评 · 点击播放/u);
+  assert.match(summarySource, /点“听小秋说”播放评语/u);
+  assert.doesNotMatch(summarySource, /void play\(\)/u);
+  assert.match(segmentSource, /点“听小秋说”播放评语/u);
+  assert.doesNotMatch(segmentSource, /void play\(\)/u);
+});
+
 test('the evaluation dialog recommends Xfyun by default', () => {
   const readingSource = fs.readFileSync(
     new URL('../client/src/pages/reading/reading.js', import.meta.url),
