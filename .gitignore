@@ -48,6 +48,7 @@ Thumbs.db
 tmp/
 temp/
 .playwright-cli/
+artifacts/
 
 # Lock files (keep package-lock.json for consistent installs)
 yarn.lock
@@ -63,3 +64,6 @@ pnpm-lock.yaml
 # Agent files
 .agent/
 .archify/
+
+# Local OCR model; not required by the application
+eng.traineddata

@@ -1,4 +1,3 @@
-import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
 import type {
   AdminDashboardFilters,
   AdminDashboardResult,
@@ -6,9 +5,10 @@ import type {
   StudentAccountInput,
   StudentCredential,
 } from '@shared/api.interface';
+import { apiRequest } from './http';
 
 export async function getDashboard(filters: AdminDashboardFilters = {}) {
-  const response = await axiosForBackend<AdminDashboardResult>({
+  const response = await apiRequest<AdminDashboardResult>({
     url: '/api/admin/dashboard',
     method: 'GET',
     params: filters,
@@ -17,25 +17,25 @@ export async function getDashboard(filters: AdminDashboardFilters = {}) {
 }
 
 export async function createStudents(students: StudentAccountInput[]) {
-  const response = await axiosForBackend<{ credentials: StudentCredential[] }>({
+  const response = await apiRequest<{ credentials: StudentCredential[] }>({
     url: '/api/admin/students', method: 'POST', data: { students },
   });
   return response.data.credentials;
 }
 
 export async function setStudentStatus(id: string, status: 'active' | 'disabled') {
-  await axiosForBackend({ url: `/api/admin/students/${id}/status`, method: 'PATCH', data: { status } });
+  await apiRequest({ url: `/api/admin/students/${id}/status`, method: 'PATCH', data: { status } });
 }
 
 export async function resetStudentPassword(id: string) {
-  const response = await axiosForBackend<StudentCredential>({
+  const response = await apiRequest<StudentCredential>({
     url: `/api/admin/students/${id}/reset-password`, method: 'POST',
   });
   return response.data;
 }
 
 export async function getStudentAttempts(id: string) {
-  const response = await axiosForBackend<{ items: ReadingHistoryItem[] }>({
+  const response = await apiRequest<{ items: ReadingHistoryItem[] }>({
     url: `/api/admin/students/${id}/attempts`, method: 'GET',
   });
   return response.data.items;

@@ -1,8 +1,8 @@
-import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
 import type { LessonCatalog, LessonView } from '@shared/api.interface';
+import { apiRequest } from './http';
 
 export async function getLessonCatalog() {
-  const response = await axiosForBackend<LessonCatalog>({
+  const response = await apiRequest<LessonCatalog>({
     url: '/api/lessons',
     method: 'GET',
     meta: { autoJumpToLogin: false },
@@ -11,7 +11,7 @@ export async function getLessonCatalog() {
 }
 
 export async function getLesson(slug: string) {
-  const response = await axiosForBackend<LessonView>({
+  const response = await apiRequest<LessonView>({
     url: `/api/lessons/${slug}`,
     method: 'GET',
     meta: { autoJumpToLogin: false },

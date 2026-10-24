@@ -1,4 +1,3 @@
-import { logger } from '@lark-apaas/client-toolkit/logger';
 import { getTeacherSpeechClip } from '../../api/reading';
 import { teacherClips } from './teacher-clips';
 import {
@@ -99,7 +98,7 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
         audio.src = mergedUrl;
       })
       .catch(error => {
-        logger.warn('总评音频合并失败，已回退分段播放', error);
+        console.warn('总评音频合并失败，已回退分段播放', error);
       });
   };
   async function play() {

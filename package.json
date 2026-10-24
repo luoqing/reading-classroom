@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "./scripts/dev.sh",
+    "dev:standalone": "STANDALONE_CONTENT=true vite --config vite.config.ts --host 0.0.0.0",
     "dev:server": "NODE_ENV=development nest start --watch",
     "dev:client": "NODE_ENV=development vite --config vite.config.ts",
     "gen:db-schema": "npx -y @lark-apaas/db-schema-sync@latest --output server/database/schema.ts --export-custom-types",
@@ -17,6 +18,8 @@
     "build:prod": "npm run build:server && npm run build:client",
     "build:server": "NODE_ENV=production nest build",
     "build:client": "NODE_ENV=production vite build --config vite.config.ts",
+    "build:standalone": "./scripts/build-standalone.sh",
+    "preview:standalone": "STANDALONE_CONTENT=true vite preview --config vite.config.ts --host 0.0.0.0",
     "start": "NODE_ENV=production node main.js",
     "eslint": "eslint . --quiet",
     "stylelint": "stylelint client/src/**/*.css --quiet",
@@ -148,7 +151,7 @@
     "stylelint": "^17.3.0"
   },
   "engines": {
-    "node": ">=22.0.0",
+    "node": ">=22.22.0",
     "npm": ">=10.0.0"
   }
 }

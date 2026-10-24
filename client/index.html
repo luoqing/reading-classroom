@@ -8,9 +8,10 @@
   <title>朗读小屋 · 把秋天读给你听</title>
   <script>
     try {
-      window.__platform__ = JSON.parse('{{{__platform__}}}');
+      const platformData = '{{{__platform__}}}';
+      window.__platform__ = platformData.startsWith('{{{') ? {} : JSON.parse(platformData);
     } catch (e) {
-      console.error('Failed to parse __platform__', e);
+      window.__platform__ = {};
     }
   </script>
 </head>

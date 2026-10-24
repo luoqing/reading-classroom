@@ -1,5 +1,3 @@
-import { axiosForBackend } from '@lark-apaas/client-toolkit/utils/getAxiosForBackend';
-import { uploadFile } from '../components/business-ui/api/files/service';
 import { isAxiosError } from 'axios';
 import type {
   EvaluationReportRequest,
@@ -9,6 +7,7 @@ import type {
   ReadingResult,
   StoredClip,
 } from '../../../shared/api.interface';
+import { apiRequest } from './http';
 
 function base64(arrayBuffer: ArrayBuffer) {
   const bytes = new Uint8Array(arrayBuffer);
@@ -25,7 +24,7 @@ export async function evaluateGuestReading(
   provider: ReadingEvaluationMode,
 ): Promise<GuestReadingResult> {
   try {
-    const response = await axiosForBackend<GuestReadingResult>({
+    const response = await apiRequest<GuestReadingResult>({
       url: '/api/reading/evaluate-guest',
       method: 'POST',
       data: { text, audio: base64(pcm), provider },
@@ -60,6 +59,7 @@ export async function evaluateReading(
   clipInputs: ClipUploadInput[] = [],
 ): Promise<ReadingResult> {
   try {
+    const { uploadFile } = await import('../components/business-ui/api/files/service');
     const stored = await uploadFile(new File([sourceBlob], `reading-${crypto.randomUUID()}.${sourceBlob.type.includes('wav') ? 'wav' : 'webm'}`, { type: sourceBlob.type }));
     const clips: StoredClip[] = [];
     for (const clip of clipInputs) {
@@ -74,7 +74,7 @@ export async function evaluateReading(
         clipType: clip.clipType,
       });
     }
-    const response = await axiosForBackend<ReadingResult>({
+    const response = await apiRequest<ReadingResult>({
       url: '/api/reading/evaluate', method: 'POST',
       data: {
         lessonSlug,
@@ -105,7 +105,7 @@ export async function evaluateReading(
 }
 
 export async function saveEvaluationReport(evaluationId: string, report: EvaluationReportRequest) {
-  await axiosForBackend({
+  await apiRequest({
     url: `/api/reading/evaluations/${evaluationId}/report`,
     method: 'PATCH',
     data: report,
@@ -114,14 +114,14 @@ export async function saveEvaluationReport(evaluationId: string, report: Evaluat
 }
 
 export async function getReadingHistory() {
-  const response = await axiosForBackend<{ items: ReadingHistoryItem[] }>({
+  const response = await apiRequest<{ items: ReadingHistoryItem[] }>({
     url: '/api/reading/history', method: 'GET', meta: { autoJumpToLogin: false },
   });
   return response.data.items;
 }
 
 export async function getTeacherSpeechClip(key: string): Promise<ArrayBuffer> {
-  const response = await axiosForBackend<ArrayBuffer>({
+  const response = await apiRequest<ArrayBuffer>({
     url: `/api/reading/teacher-speech/${encodeURIComponent(key)}`,
     method: 'GET',
     responseType: 'arraybuffer',

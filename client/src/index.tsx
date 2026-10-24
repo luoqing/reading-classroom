@@ -3,15 +3,14 @@ import { createRoot, type Root } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 
-import { AppContainer } from '@lark-apaas/client-toolkit/components/AppContainer';
-import { ErrorRender } from '@lark-apaas/client-toolkit/components/ErrorRender';
-
 import RoutesComponent from './app.tsx';
 import './index.css';
 import { createPortal } from 'react-dom';
 import { Toaster } from '@client/src/components/ui/sonner';
+import { isStandaloneRuntime } from './lib/runtime';
 
-const CLIENT_BASE_PATH = process.env.CLIENT_BASE_PATH || '/';
+const configuredBasePath = process.env.CLIENT_BASE_PATH || '/';
+const CLIENT_BASE_PATH = isStandaloneRuntime() ? '/' : configuredBasePath;
 
 declare global {
   interface Window {
@@ -20,21 +19,24 @@ declare global {
 }
 
 const MainApp = () => {
+  const content = (
+    <ErrorBoundary
+      fallbackRender={({ error, resetErrorBoundary }) => (
+        <main className="app-loading" role="alert">
+          <span>叶</span>
+          <p>页面暂时无法打开：{String(error?.message || error)}</p>
+          <button type="button" onClick={resetErrorBoundary}>重新打开</button>
+        </main>
+      )}
+    >
+      <RoutesComponent />
+      {createPortal(<Toaster />, document.body)}
+    </ErrorBoundary>
+  );
+
   return (
     <BrowserRouter basename={CLIENT_BASE_PATH}>
-      <AppContainer defaultTheme="light">
-        <ErrorBoundary
-          fallbackRender={({ error, resetErrorBoundary }) => (
-            <ErrorRender
-              error={error as Error}
-              resetErrorBoundary={resetErrorBoundary}
-            />
-          )}
-        >
-          <RoutesComponent />
-          {createPortal(<Toaster />, document.body)}
-        </ErrorBoundary>
-      </AppContainer>
+      {content}
     </BrowserRouter>
   );
 };

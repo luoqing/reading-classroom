@@ -1,4 +1,4 @@
-export const assetRoot = 'https://bytedance.feishuapp.cn/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/';
+export const assetRoot = '/content/media/';
 
 export const readingAssets = {
   fullDemo: assetRoot + '1879288723418187.mp3',
