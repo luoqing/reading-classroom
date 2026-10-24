@@ -516,7 +516,7 @@ test('the result exposes summary replay and keeps the minimized playing label co
   );
 });
 
-test('teacher comments wait for a user click on desktop and mobile', () => {
+test('teacher comments and student recordings both wait for a user click', () => {
   const teacherSource = fs.readFileSync(
     new URL('../client/src/pages/reading/teacher.js', import.meta.url),
     'utf8',
@@ -524,8 +524,11 @@ test('teacher comments wait for a user click on desktop and mobile', () => {
   const summaryStart = teacherSource.indexOf('function show(result)');
   const segmentStart = teacherSource.indexOf('function showSegment(segment, kind)');
   const playbackHandlersStart = teacherSource.indexOf('audio.onplay', segmentStart);
+  const playbackEndStart = teacherSource.indexOf('audio.onended', playbackHandlersStart);
+  const playbackEndFinish = teacherSource.indexOf('audio.onwaiting', playbackEndStart);
   const summarySource = teacherSource.slice(summaryStart, segmentStart);
   const segmentSource = teacherSource.slice(segmentStart, playbackHandlersStart);
+  const playbackEndSource = teacherSource.slice(playbackEndStart, playbackEndFinish);
 
   assert.ok(summaryStart >= 0 && segmentStart > summaryStart);
   assert.ok(playbackHandlersStart > segmentStart);
@@ -534,6 +537,9 @@ test('teacher comments wait for a user click on desktop and mobile', () => {
   assert.doesNotMatch(summarySource, /void play\(\)/u);
   assert.match(segmentSource, /点“听小秋说”播放评语/u);
   assert.doesNotMatch(segmentSource, /void play\(\)/u);
+  assert.doesNotMatch(playbackEndSource, /onListen/u);
+  assert.doesNotMatch(teacherSource, /replayAfterComment/u);
+  assert.match(teacherSource, /teacherPractice'\)\.onclick = \(\) => \{ if \(focus\) \{ stop\(\); onListen\(focus\); \}/u);
 });
 
 test('the evaluation dialog recommends Xfyun by default', () => {

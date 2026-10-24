@@ -39,7 +39,6 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
   let request = 0;
   let celebrated = false;
   let minimizeTimer;
-  let replayAfterComment = false;
   let speechQueue = [];
   let speechIndex = 0;
   let speechVersion = 0;
@@ -78,7 +77,7 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
   minimizeButton.title = '缩小为悬浮头像';
   dialog.append(minimizeButton);
   pose(false);
-  const stop = () => { request++; replayAfterComment = false; clearTimeout(minimizeTimer); audio.pause(); pose(false); };
+  const stop = () => { request++; clearTimeout(minimizeTimer); audio.pause(); pose(false); };
   const close = () => { stop(); $('audio')?.pause(); dialog.classList.remove('minimized'); if (dialog.open) dialog.close(); };
   const open = () => { clearTimeout(minimizeTimer); dialog.classList.remove('minimized'); if (!dialog.open) dialog.show(); };
   const setSpeechQueue = urls => {
@@ -155,7 +154,6 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
         : [clip.url],
       speechKeys,
     );
-    replayAfterComment = Boolean(focus);
     open();
     $('teacherReplay').textContent = '▷ 听小秋说';
     $('teacherAudioStatus').textContent = '点“听小秋说”播放评语。';
@@ -170,7 +168,6 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
     $('teacherWord').textContent = segment.issues?.map(issue => issue.word).filter(Boolean).join('、') || '';
     $('teacherPractice').textContent = '▷ 回听这句';
     setSpeechQueue([clip.url]);
-    replayAfterComment = true;
     open();
     $('teacherReplay').textContent = '▷ 听小秋说';
     $('teacherAudioStatus').textContent = '点“听小秋说”播放评语。';
@@ -183,13 +180,6 @@ export function setupTeacher({ getReport, onPractice, onListen }) {
       speechIndex += 1;
       audio.src = speechQueue[speechIndex];
       void play();
-      return;
-    }
-    if (replayAfterComment && focus) {
-      replayAfterComment = false;
-      $('teacherAudioStatus').textContent = '现在回放你的朗读，听一听、核实一下。';
-      dialog.classList.add('minimized');
-      onListen(focus);
       return;
     }
     $('teacherAudioStatus').textContent = '点评说完啦，点小秋可以再听。';
