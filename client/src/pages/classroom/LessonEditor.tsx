@@ -4,21 +4,17 @@ import {
   Check,
   BookOpen,
   AudioLines,
-  ChartNoAxesCombined,
-  FileText,
   ImagePlus,
   Lightbulb,
   LoaderCircle,
   Mic,
   Square,
   Plus,
-  PencilLine,
   Save,
   Sparkles,
   Target,
   Trash2,
   Upload,
-  Users,
   X,
 } from 'lucide-react';
 import type {
@@ -41,14 +37,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Image } from '../../components/ui/image';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
-import ReadingCottageMark from './ReadingCottageMark';
+import TeacherWorkspaceSidebar, { type WorkspaceView } from './TeacherWorkspaceSidebar';
 import { paragraphsFromPagePinyin, restoreLegacyPagePinyin } from './legacy-lesson-pinyin';
 
 interface LessonEditorProps {
   lesson?: AdminLessonSummary | null;
   onClose: () => void;
   onSaved: () => Promise<void> | void;
-  onNavigate: (destination: 'lessons' | 'resources' | 'students' | 'overview' | 'new') => void;
+  onNavigate: (destination: WorkspaceView | 'new') => void;
 }
 
 const EMPTY_DRAFT: LessonDraftInput = {
@@ -615,11 +611,7 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
   }));
 
   return <div className="lesson-editor-backdrop"><div className="lesson-editor-shell">
-    <aside className="lesson-editor-sidebar" aria-label="教师工作台">
-      <div className="lesson-editor-brand"><ReadingCottageMark /><strong>朗读小屋</strong><span>让每一篇课文，<br />都读进孩子的心里</span></div>
-      <nav aria-label="工作台导航"><button type="button" onClick={() => leaveEditor('lessons')}><FileText />我的课文</button><button type="button" className="current" aria-current="page" onClick={() => { if (lesson) leaveEditor('new'); else document.querySelector('.lesson-editor-backdrop')?.scrollTo({ top: 0, behavior: 'smooth' }); }}><PencilLine />录入新课文</button><button type="button" onClick={() => leaveEditor('resources')}><BookOpen />我的资源</button><button type="button" onClick={() => leaveEditor('students')}><Users />班级管理</button><button type="button" onClick={() => leaveEditor('overview')}><ChartNoAxesCombined />学情观察</button></nav>
-      <div className="lesson-editor-sidebar-art"><p>在文字的阳光下，<br />看见更大的世界。</p></div>
-    </aside>
+    <TeacherWorkspaceSidebar active="lessons" onNavigate={leaveEditor} />
     <section className="lesson-editor" aria-label="AI 课文录入">
       <header className="lesson-editor-header">
         <div><span className="teacher-kicker">朗读小屋 · 课文工作台</span><h2>{lesson ? `编辑《${lesson.title}》` : '录入新课文'}</h2><p>每一步只完成一件事，随时可以保存当前进度。</p></div>

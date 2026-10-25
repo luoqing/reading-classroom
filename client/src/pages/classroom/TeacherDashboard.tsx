@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BarChart3,
   BookOpen,
   CalendarDays,
   ChevronRight,
@@ -41,7 +40,7 @@ import {
 } from '../../api/classroom';
 import { logout } from '../../api/auth';
 import LessonEditor from './LessonEditor';
-import ReadingCottageMark from './ReadingCottageMark';
+import TeacherWorkspaceSidebar, { type WorkspaceView } from './TeacherWorkspaceSidebar';
 import { Input } from '../../components/ui/input';
 import {
   Select,
@@ -53,7 +52,7 @@ import {
 import './teacher-dashboard.css';
 import './lesson-editor.css';
 
-type DashboardView = 'overview' | 'students' | 'lessons' | 'resources' | 'accounts';
+type DashboardView = WorkspaceView;
 type StudentFilter = 'all' | 'help' | 'unpracticed';
 
 const DASHBOARD_RANGES: Array<{ value: AdminDashboardRange; label: string }> = [
@@ -347,14 +346,6 @@ export default function TeacherDashboard({
 
   const signOut = async () => { await logout(); onLogout(); };
 
-  const navItems: Array<{ key: DashboardView; label: string; icon: typeof BarChart3 }> = [
-    { key: 'overview', label: '学情总览', icon: BarChart3 },
-    { key: 'students', label: '学生档案', icon: UsersRound },
-    { key: 'lessons', label: '课文管理', icon: BookOpen },
-    { key: 'resources', label: '我的资源', icon: FileText },
-    { key: 'accounts', label: '账号管理', icon: KeyRound },
-  ];
-
   const titleByView: Record<DashboardView, string> = {
     overview: '学情总览',
     students: '学生档案',
@@ -364,24 +355,7 @@ export default function TeacherDashboard({
   };
 
   return <div className="teacher-app">
-    <aside className="teacher-nav">
-      <div className="teacher-brand"><ReadingCottageMark /><div><strong>朗读小屋</strong><small>TEACHER DESK</small></div></div>
-      <div className="teacher-workspace"><strong>教学版 · 老师工作台</strong><span>登录后展示真实学生数据</span></div>
-      <nav aria-label="老师工作台导航">{navItems.map(item => {
-        const Icon = item.icon;
-        return <button
-          key={item.key}
-          className={view === item.key ? 'active' : ''}
-          onClick={() => setView(item.key)}
-        ><Icon size={18} />{item.label}</button>;
-      })}</nav>
-      <p className="teacher-nav-note">先看谁需要帮助，再点进学生详情听原声，不用逐条翻记录。</p>
-      <div className="teacher-account">
-        <span>师</span>
-        <div><strong>老师</strong><small>管理员账号</small></div>
-        <button onClick={signOut} title="退出" aria-label="退出老师账号"><LogOut size={17} /></button>
-      </div>
-    </aside>
+    <TeacherWorkspaceSidebar active={view} onNavigate={setView} />
 
     <main className="teacher-main">
       <header className="teacher-topbar">

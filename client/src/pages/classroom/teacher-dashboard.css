@@ -4,18 +4,16 @@
   --teacher-green: #205d42;
   --teacher-green-deep: #163f2e;
   --teacher-sage: #dfe7d6;
-  --teacher-cream: #f7f2e4;
-  --teacher-paper: #fffdf6;
-  --teacher-line: #dedccb;
+  --teacher-cream: #f8f9f6;
+  --teacher-paper: #fffdf8;
+  --teacher-line: #e5ddcd;
   --teacher-amber: #c8792d;
   --teacher-rose: #a85e3b;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at 76% 5%, rgba(222, 231, 206, .72), transparent 24rem),
-    linear-gradient(135deg, #f8f4e8 0%, #f2efdf 54%, #eee9d8 100%);
+  background: #f8f9f6;
   color: var(--teacher-ink);
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   font-family: "LXGW WenKai", "Kaiti SC", "Microsoft YaHei", sans-serif;
 }
 
@@ -24,99 +22,7 @@
 .teacher-app textarea { font: inherit; }
 .teacher-app button { cursor: pointer; }
 
-.teacher-nav {
-  min-height: 100vh;
-  height: 100vh;
-  position: sticky;
-  top: 0;
-  padding: 28px 20px 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid rgba(42, 71, 54, .12);
-  background: rgba(255, 253, 246, .78);
-  backdrop-filter: blur(18px);
-}
-
-.teacher-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 25px; }
-.teacher-brand > svg {
-  width: 42px;
-  height: 42px;
-  border-radius: 13px 13px 13px 4px;
-  background: var(--teacher-green);
-  box-shadow: 0 8px 18px rgba(32, 93, 66, .2);
-}
-.teacher-brand div { display: grid; }
-.teacher-brand strong { font: 800 19px "Noto Serif SC", "Songti SC", serif; }
-.teacher-brand small { margin-top: 2px; color: #7d887e; font-size: 9px; letter-spacing: .2em; }
-
-.teacher-workspace {
-  display: grid;
-  gap: 5px;
-  margin-bottom: 22px;
-  padding: 14px 12px;
-  border: 1px solid #dedbca;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, .45);
-}
-.teacher-workspace strong { color: var(--teacher-green); font-size: 13px; }
-.teacher-workspace span { color: var(--teacher-muted); font-size: 11px; line-height: 1.55; }
-
-.teacher-nav nav { display: grid; gap: 7px; }
-.teacher-nav nav button {
-  min-height: 46px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 13px;
-  background: transparent;
-  color: #5f6a62;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  text-align: left;
-  font-weight: 700;
-  transition: transform .18s ease, color .18s ease, background .18s ease;
-}
-.teacher-nav nav button:hover { color: var(--teacher-green); transform: translateX(2px); }
-.teacher-nav nav button.active {
-  color: white;
-  background: linear-gradient(135deg, #246747, #185038);
-  box-shadow: 0 10px 22px rgba(31, 92, 65, .2);
-}
-.teacher-nav-note {
-  margin: auto 5px 18px;
-  padding-top: 18px;
-  border-top: 1px solid #dedbca;
-  color: #8a9089;
-  font-size: 11px;
-  line-height: 1.75;
-}
-.teacher-account {
-  padding: 10px;
-  display: grid;
-  grid-template-columns: 37px 1fr 32px;
-  align-items: center;
-  gap: 9px;
-  border: 1px solid #dedbca;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, .55);
-}
-.teacher-account > span {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #dfe7d6;
-  color: var(--teacher-green);
-  font-weight: 800;
-}
-.teacher-account div { display: grid; }
-.teacher-account strong { font-size: 13px; }
-.teacher-account small { color: var(--teacher-muted); font-size: 10px; }
-.teacher-account button { border: 0; background: transparent; color: #768078; }
-
-.teacher-main { min-width: 0; padding: 34px clamp(24px, 3vw, 46px) 70px; }
+.teacher-main { min-width: 0; padding: 28px clamp(20px, 3vw, 44px) 70px; }
 .teacher-topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .teacher-topbar h1 {
   margin: 7px 0 0;
@@ -161,10 +67,8 @@
   gap: 30px;
   overflow: hidden;
   position: relative;
-  background:
-    radial-gradient(circle at 89% 35%, rgba(255, 255, 255, .85), transparent 12rem),
-    linear-gradient(120deg, rgba(255, 253, 246, .94), rgba(224, 233, 211, .72));
-  box-shadow: 0 18px 55px rgba(65, 79, 54, .07);
+  background: #fffdf8;
+  box-shadow: 0 12px 32px rgba(35, 58, 43, .04);
 }
 .teacher-hero::after {
   content: "";
@@ -303,7 +207,7 @@
 .archive-card,
 .lesson-admin-card {
   border: 1px solid #e1ded0;
-  background: rgba(255, 253, 247, .88);
+  background: #fffdf8;
   box-shadow: 0 16px 40px rgba(52, 70, 57, .05);
 }
 .teacher-board { min-width: 0; border-radius: 20px; overflow: hidden; }
@@ -462,7 +366,7 @@
 .account-row > div { display: flex; justify-content: flex-end; gap: 7px; }
 .account-row > div button { min-height: 32px; padding: 0 9px; border: 1px solid #d8dbcf; border-radius: 9px; background: white; color: #506258; display: inline-flex; align-items: center; gap: 5px; font-size: 10px; }
 
-.teacher-loading { position: fixed; inset: 0 0 0 232px; z-index: 30; display: grid; place-content: center; gap: 10px; background: rgba(247, 243, 232, .78); color: var(--teacher-green); text-align: center; backdrop-filter: blur(4px); }
+.teacher-loading { position: fixed; inset: 0 0 0 220px; z-index: 30; display: grid; place-content: center; gap: 10px; background: rgba(248, 249, 246, .85); color: var(--teacher-green); text-align: center; backdrop-filter: blur(4px); }
 .teacher-loading svg { margin: auto; animation: teacher-spin 1s linear infinite; }
 @keyframes teacher-spin { to { transform: rotate(360deg); } }
 
@@ -517,25 +421,13 @@
 .credential-row { padding: 12px; border-top: 1px solid #e2e1d9; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .credential-row code { padding: 5px 7px; border-radius: 7px; background: #eeeee7; }
 
-@media (max-width: 1240px) {
-  .teacher-app { grid-template-columns: 86px minmax(0, 1fr); }
-  .teacher-brand { justify-content: center; padding-inline: 0; }
-  .teacher-brand div,
-  .teacher-workspace,
-  .teacher-nav-note,
-  .teacher-account div { display: none; }
-  .teacher-nav nav button { justify-content: center; padding: 0; font-size: 0; }
-  .teacher-nav nav button svg { width: 20px; height: 20px; }
-  .teacher-account { grid-template-columns: 1fr; justify-items: center; }
-  .teacher-account button { display: none; }
+@media (max-width: 900px) {
+  .teacher-app { grid-template-columns: 76px minmax(0, 1fr); }
   .teacher-overview-grid { grid-template-columns: 1fr; }
   .teacher-insights { grid-template-columns: 1fr 1fr; }
-  .teacher-loading { left: 86px; }
+  .teacher-loading { left: 76px; }
   .archive-grid,
   .lesson-admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (max-width: 900px) {
   .teacher-filterbar { grid-template-columns: 1fr 1fr; }
   .teacher-search { grid-column: 1 / -1; }
   .teacher-metrics { grid-template-columns: 1fr 1fr; }
@@ -549,12 +441,6 @@
 
 @media (max-width: 680px) {
   .teacher-app { display: block; }
-  .teacher-nav { height: auto; min-height: 0; position: sticky; z-index: 20; padding: 10px 14px; flex-direction: row; align-items: center; gap: 12px; }
-  .teacher-brand { padding: 0; }
-  .teacher-brand > span { width: 34px; height: 34px; font-size: 17px; }
-  .teacher-nav nav { flex: 1; display: flex; justify-content: flex-end; }
-  .teacher-nav nav button { width: 36px; min-height: 36px; }
-  .teacher-account { display: none; }
   .teacher-main { padding: 22px 14px 65px; }
   .teacher-topbar { align-items: flex-start; }
   .teacher-topbar h1 { font-size: 27px; }
@@ -592,7 +478,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .teacher-nav nav button,
   .teacher-loading svg { transition: none; animation: none; }
 }
 
