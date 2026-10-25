@@ -1,0 +1,10 @@
+.student-password-reminder { position: fixed; z-index: 29; top: 58px; right: 18px; display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 12px; border: 1px solid #e4b47c; border-radius: 18px; background: #fff2df; color: #925b29; font-size: 12px; box-shadow: 0 8px 20px rgba(95, 63, 30, .12); }
+.student-password-backdrop { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 20px; background: rgba(27, 42, 33, .5); backdrop-filter: blur(5px); }
+.student-password-dialog { position: relative; display: grid; gap: 13px; width: min(420px, 100%); padding: 28px; border: 1px solid #ddd5c6; border-radius: 22px; background: #fffdf7; box-shadow: 0 24px 70px rgba(26, 40, 32, .24); }
+.student-password-dialog > span { color: #557462; font-size: 10px; font-weight: 800; letter-spacing: 2px; }
+.student-password-dialog h2 { margin: 0; color: #283b31; font: 800 25px "Noto Serif SC", "Songti SC", serif; }
+.student-password-dialog > p { margin: -5px 0 2px; color: #7e837d; font-size: 12px; }
+.student-password-dialog label { display: grid; gap: 6px; color: #58675e; font-size: 12px; }
+.student-password-close { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #f1eee6; color: #57665d; }
+.student-password-message { padding: 8px 10px; border-radius: 9px; background: #f5ead8; color: #8d5a2c!important; }
+@media (max-width: 620px) { .student-password-reminder { top: 64px; left: 14px; right: 14px; justify-content: center; } }

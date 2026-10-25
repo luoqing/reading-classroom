@@ -171,39 +171,93 @@ function neutralGoal(words, labels = []) {
 
 function naturalGoal(text, words, aligned, natural) {
   if (natural?.neutralTargets?.length) return neutralGoal(words, natural.neutralTargets);
-  return buildRhythmGoal({ text, words, aligned });
+  return {
+    stars: null,
+    count: '未设置轻声词组',
+    good: '本课没有单独设置轻声词组',
+    practice: '',
+    issues: [],
+    passedCount: 0,
+    totalCount: 0,
+  };
 }
 
-function deliveryGoal(words, delivery) {
-  const yiTargets = delivery?.yiTargets || [];
-  const yiWords = words.filter(word => word.content === '一');
-  const yiResults = yiTargets.map((target, index) => {
-    const word = yiWords[index];
+function toneFromReading(reading = '') {
+  const numbered = reading.match(/([1-4])(?:\s|$)/u);
+  if (numbered) return Number(numbered[1]);
+  const toneMarks = [
+    /[āēīōūǖ]/u,
+    /[áéíóúǘ]/u,
+    /[ǎěǐǒǔǚ]/u,
+    /[àèìòùǜ]/u,
+  ];
+  const index = toneMarks.findIndex(pattern => pattern.test(reading));
+  return index < 0 ? null : index + 1;
+}
+
+function pronunciationTargets(delivery) {
+  if (delivery?.pronunciationTargets?.length) return delivery.pronunciationTargets;
+  return (delivery?.yiTargets || []).map(target => ({
+    char: '一',
+    phrase: target.label.replace(/^第[一二三四五六七八九十]+处/u, '').replace(/[“”]/gu, ''),
+    reading: target.reading,
+    tone: target.tone,
+  }));
+}
+
+function configuredNeutralTargets(natural, delivery) {
+  if (natural?.neutralTargets?.length) return natural.neutralTargets;
+  return delivery?.neutralTargets || [];
+}
+
+function pronunciationGoal(text, words, delivery) {
+  const targets = pronunciationTargets(delivery);
+  const hanText = [...text].filter(character => /\p{Script=Han}/u.test(character)).join('');
+  const phraseCursors = new Map();
+  const usedPositions = new Set();
+  const results = targets.map(target => {
+    const phrase = [...(target.phrase || '')].filter(character => /\p{Script=Han}/u.test(character)).join('');
+    const startFrom = phraseCursors.get(phrase) || 0;
+    const phrasePosition = phrase ? hanText.indexOf(phrase, startFrom) : -1;
+    if (phrasePosition >= 0) phraseCursors.set(phrase, phrasePosition + phrase.length);
+    const charOffset = phrase.indexOf(target.char);
+    const expectedPosition = phrasePosition >= 0 && charOffset >= 0 ? phrasePosition + charOffset : null;
+    let word = Number.isInteger(expectedPosition)
+      ? words.find(item => item.position === expectedPosition)
+      : null;
+    if (!word) word = words.find(item => item.content === target.char && !usedPositions.has(item.position));
+    if (word && Number.isInteger(word.position)) usedPositions.add(word.position);
     const measured = word?.toneAnalysis;
+    const syllable = mainSyllable(word);
+    const expectedTone = Number(target.tone) || toneFromReading(target.reading);
     const hasContour = Number.isFinite(measured?.movement) && measured?.contour?.length >= 8;
-    const reliable = hasContour || (Number.isFinite(measured?.tone) && (measured.confidence ?? 0) >= .35);
-    const contourMatches = target.tone === 2 ? measured?.movement > -3
-      : target.tone === 4 ? measured?.movement < -1.5
-        : true;
-    const passed = reliable && (hasContour ? contourMatches : measured.tone === target.tone);
-    return { ...target, word, measured, passed };
+    const measuredTone = Number.isFinite(measured?.tone) ? Number(measured.tone) : Number(syllable?.tone);
+    const reliable = hasContour
+      || (Number.isFinite(measured?.tone) && (measured.confidence ?? 0) >= .35)
+      || Number.isFinite(syllable?.tone);
+    const contourMatches = expectedTone === 2 ? measured?.movement > -3
+      : expectedTone === 4 ? measured?.movement < -1.5
+        : measuredTone === expectedTone;
+    const passed = Boolean(word && expectedTone && reliable)
+      && (hasContour ? contourMatches : measuredTone === expectedTone);
+    return { ...target, expectedTone, word, measured, passed };
   });
-  const passedYi = yiResults.filter(result => result.passed);
-  const passedCount = passedYi.length;
-  const totalCount = yiResults.length;
-  const yiIssues = yiResults
+  const passedTargets = results.filter(result => result.passed);
+  const passedCount = passedTargets.length;
+  const totalCount = results.length;
+  const issues = results
     .filter(result => !result.passed && result.word)
-    .map(result => timedIssue(result.word, `${result.label}的“一”声调需再听（目标${['', '一声', '二声', '三声', '四声'][result.tone] || ''} ${result.reading}）`))
+    .map(result => timedIssue(result.word, `${result.phrase}中的“${result.char}”需再听（目标 ${result.reading}）`))
     .filter(Boolean);
-  const failedYi = yiResults.filter(result => !result.passed);
+  const failedTargets = results.filter(result => !result.passed);
   return {
     stars: starFromRatio(passedCount, totalCount),
-    count: `${passedCount}/${totalCount}处“一”的变调`,
-    good: passedCount ? `AI确认 ${passedYi.length} 处“一”的变调读到位` : '这次先不着急，跟着示范读一遍',
-    practice: failedYi.length
-      ? `再练：${failedYi.map(result => `${result.label}读${['', '一声', '二声', '三声', '四声'][result.tone] || ''} ${result.reading}`).join('、')}`
-      : `${yiTargets.length}处“一”的声调均读到位`,
-    issues: yiIssues,
+    count: `${passedCount}/${totalCount}处多音字词组`,
+    good: passedCount ? `AI确认 ${passedTargets.length} 处词组中的目标读音` : '这次先不着急，跟着示范读一遍',
+    practice: failedTargets.length
+      ? `再练：${failedTargets.map(result => `${result.phrase}中的“${result.char}”读 ${result.reading}`).join('、')}`
+      : `${targets.length}处多音字或变调均读准确`,
+    issues,
     passedCount,
     totalCount,
   };
@@ -254,11 +308,11 @@ function fluencyGoal({ text, words, aligned, score }) {
   const sentenceStars = scoreStars(score);
   const sentences = {
     stars: sentenceStars,
-    count: sentenceStars === null ? '每段通顺待复核' : '整篇连贯度',
+    count: sentenceStars === null ? '每段流利待复核' : '整篇连贯度',
     good: sentenceStars === 3
-      ? '每段语句读得通顺'
+      ? '每段语句读得流利'
       : sentenceStars === 2
-        ? '大部分语句读得比较通顺'
+        ? '大部分语句读得比较流利'
         : '愿意完整读下来，就是很好的开始',
     practice: sentenceStars === 3 ? '继续保持连贯朗读' : '放慢一点，把每句话连起来读',
     issues: [],
@@ -266,14 +320,14 @@ function fluencyGoal({ text, words, aligned, score }) {
   const stars = averageStars([paragraphs, sentences]);
   return {
     stars,
-    count: stars === null ? '读通顺待复核' : '自然段与整篇连贯度',
+    count: stars === null ? '读流利待复核' : '自然段与整篇连贯度',
     good: [paragraphs.good, sentences.good].join('；'),
     practice: [paragraphs, sentences].filter(goal => goal.stars !== null && goal.stars < 3)
       .map(goal => goal.practice.replace(/^再练：/u, '')).join('；') || '继续保持自然段清楚、语句连贯',
     issues: paragraphs.issues,
     details: [
       { label: '自然段停顿', ...paragraphs },
-      { label: '每段读通顺', ...sentences },
+      { label: '每段读流利', ...sentences },
     ],
   };
 }
@@ -284,40 +338,36 @@ function correctnessGoal(accuracy, neutral, delivery) {
     .filter(goal => goal.stars !== null && goal.stars < 3);
   return {
     stars,
-    count: stars === null ? '读正确待复核' : '重点字、轻声和变调',
-    good: `重点字 ${accuracy.targetPassedCount}/${accuracy.targetTotalCount}，“一”的变调 ${delivery.passedCount}/${delivery.totalCount}，轻声“了” ${neutral.passedCount}/${neutral.totalCount}`,
+    count: stars === null ? '读准确待复核' : '重点字、轻声字和多音字词组',
+    good: `重点字 ${accuracy.targetPassedCount}/${accuracy.targetTotalCount}，多音字词组 ${delivery.passedCount}/${delivery.totalCount}，轻声词组 ${neutral.passedCount}/${neutral.totalCount}`,
     practice: practiceGoals.map(goal => goal.practice.replace(/^再练：/u, '')).join('；')
-      || '重点字、轻声和“一”的变调都读得很准确',
+      || '重点字、轻声字和多音字词组都读得很准确',
     issues: [...accuracy.issues, ...neutral.issues, ...delivery.issues],
     details: [
       { label: '重点字', ...accuracy },
-      { label: '“一”的变调', ...delivery },
-      { label: '轻声“了”', ...neutral },
+      { label: '多音字与变调', ...delivery },
+      { label: '轻声字词', ...neutral },
     ],
   };
 }
 
 const scoreStars = score => score === null ? null : score >= 90 ? 3 : score >= 70 ? 2 : 1;
 
-function expressionGoal(score, delivery, aligned) {
-  const stars = scoreStars(score);
-  return {
-    stars,
-    count: stars === null ? '语调待复核' : '整篇语调',
-    good: stars === 3 ? '整体语调和表达较自然' : stars === 2 ? '大部分句子的语气较自然' : '愿意完整读下来，就是很好的开始',
-    practice: delivery?.description || (aligned ? '结合示范，再听一听重音和语气' : '逐字结果未对齐，请回听确认语气'),
-    issues: [],
-  };
-}
-
 export function buildLessonGoals({ words, scores, aligned, text, confidentIssues = [], rubric = {} }) {
   const accuracyTargets = rubric?.accuracyTargets || [];
-  if (accuracyTargets.length && aligned) {
+  const naturalRubric = rubric?.natural || {};
+  const deliveryRubric = rubric?.delivery || {};
+  const neutralTargets = configuredNeutralTargets(naturalRubric, deliveryRubric);
+  const hasConfiguredTargets = accuracyTargets.length
+    || neutralTargets.length
+    || pronunciationTargets(deliveryRubric).length;
+  if (hasConfiguredTargets && aligned) {
     const accuracy = accuracyGoal(words, confidentIssues, accuracyTargets);
-    const natural = naturalGoal(text, words, aligned, rubric?.natural);
-    const deliveryRubric = rubric?.delivery || {};
-    const hasSoundTargets = (deliveryRubric.yiTargets?.length || 0) > 0;
-    const delivery = hasSoundTargets ? deliveryGoal(words, deliveryRubric) : expressionGoal(scores.tone_score, deliveryRubric, aligned);
+    const natural = naturalGoal(text, words, aligned, {
+      ...naturalRubric,
+      neutralTargets,
+    });
+    const delivery = pronunciationGoal(text, words, deliveryRubric);
     const fluency = fluencyGoal({ text, words, aligned, score: scores.fluency_score });
     const correctness = correctnessGoal(accuracy, natural, delivery);
     return {
@@ -331,15 +381,15 @@ export function buildLessonGoals({ words, scores, aligned, text, confidentIssues
     };
   }
   const fallback = (score, label) => ({ stars: scoreStars(score), count: score === null ? '暂未评分' : '整篇参考', good: score === null ? '本轮没有可用结果' : `${label}参考整篇讯飞评分`, practice: aligned ? '可结合原文中的逐字提示练习' : '逐字结果未能对齐，请回听确认' });
-  const fluency = fallback(scores.fluency_score, '读通顺');
-  const correctness = fallback(scores.accuracy_score, '读正确');
+  const fluency = fallback(scores.fluency_score, '读流利');
+  const correctness = fallback(scores.accuracy_score, '读准确');
   return {
     targeted: false,
     fluency,
     correctness,
     accuracy: fallback(scores.accuracy_score, '读准确'),
-    natural: fallback(scores.fluency_score, '读自然'),
-    delivery: fallback(scores.tone_score, '读到位'),
+    natural: fallback(null, '轻声字词'),
+    delivery: fallback(null, '多音字词组'),
     issues: [],
   };
 }

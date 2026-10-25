@@ -8,6 +8,7 @@ export interface AccountView {
   studentNo: string | null;
   className: string | null;
   status: string;
+  mustChangePassword: boolean;
 }
 
 export interface LoginRequest {
@@ -19,12 +20,24 @@ export interface LoginResult {
   account: AccountView;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface PinyinToken {
+  text: string;
+  pinyin: string;
+  needsReview?: boolean;
+}
+
 export interface LessonPageView {
   id: string;
   pageNo: number;
   pageType: string;
   text: string;
-  pinyin: { text: string; pinyin: string }[];
+  pinyin: PinyinToken[];
+  scenePrompt: string;
   illustrationUrl: string | null;
   demoAudioUrl: string | null;
   videoStartMs: number | null;
@@ -55,6 +68,15 @@ export interface LessonRubric {
   delivery?: {
     kind?: string;
     description?: string;
+    pronunciationTargets?: {
+      char: string;
+      phrase: string;
+      reading: string;
+      tone?: number;
+    }[];
+    /** Legacy field kept for lesson data created before light-tone rules moved. */
+    neutralTargets?: string[];
+    /** Legacy field kept for existing Autumn lesson data. */
     yiTargets?: { label: string; tone: number; reading: string }[];
     focusTargets?: string[];
   };
@@ -63,6 +85,53 @@ export interface LessonRubric {
     targetPhoneLevel?: number;
     targetRepeatedLevel?: number;
   };
+}
+
+export interface LessonDraftPageInput {
+  id?: string;
+  pageNo: number;
+  pageType: 'cover' | 'body';
+  text: string;
+  pinyin: PinyinToken[];
+  scenePrompt: string;
+  illustrationUrl?: string | null;
+}
+
+export interface LessonDraftInput {
+  id?: string;
+  slug: string;
+  title: string;
+  gradeLabel?: string | null;
+  fullText: string;
+  pinyin: { paragraphs: string[] };
+  rubric: LessonRubric;
+  status: 'draft' | 'published';
+  pages: LessonDraftPageInput[];
+}
+
+export interface LessonRecognitionImage {
+  name: string;
+  dataUrl: string;
+}
+
+export interface LessonRecognitionRequest {
+  images: LessonRecognitionImage[];
+}
+
+export interface LessonRecognitionResult extends LessonDraftInput {
+  status: 'draft';
+  reviewNotes: string[];
+}
+
+export interface IllustrationGenerateRequest {
+  lessonTitle: string;
+  pageNo: number;
+  text: string;
+  scenePrompt: string;
+}
+
+export interface IllustrationGenerateResult {
+  illustrationUrl: string;
 }
 
 export interface LessonView {
@@ -167,6 +236,10 @@ export interface StudentAccountInput {
   studentNo?: string;
   className?: string;
   initialPassword?: string;
+}
+
+export interface StudentPasswordResetRequest {
+  newPassword?: string;
 }
 
 export interface StudentCredential {

@@ -24,7 +24,7 @@ const MainApp = () => {
       fallbackRender={({ error, resetErrorBoundary }) => (
         <main className="app-loading" role="alert">
           <span>叶</span>
-          <p>页面暂时无法打开：{String(error?.message || error)}</p>
+          <p>页面暂时无法打开：{error instanceof Error ? error.message : String(error)}</p>
           <button type="button" onClick={resetErrorBoundary}>重新打开</button>
         </main>
       )}

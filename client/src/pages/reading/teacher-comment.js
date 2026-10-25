@@ -1,12 +1,12 @@
 const legacyDimensions = [
   { key: 'accuracy', label: '读准确' },
-  { key: 'natural', label: '读自然' },
-  { key: 'delivery', label: '读到位' },
+  { key: 'natural', label: '轻声字词' },
+  { key: 'delivery', label: '多音字与变调' },
 ];
 
 const twoDimensions = [
-  { key: 'fluency', label: '读通顺' },
-  { key: 'correctness', label: '读正确' },
+  { key: 'fluency', label: '读流利' },
+  { key: 'correctness', label: '读准确' },
 ];
 
 const dimensionsFor = report => report?.goals?.fluency && report?.goals?.correctness
@@ -76,15 +76,15 @@ function twoDimensionComment(report) {
   const fluencyStars = report.goals.fluency?.stars;
   const correctnessStars = report.goals.correctness?.stars;
   const fluency = fluencyStars === 3
-    ? '你有自然段意识，每段读得通顺'
+    ? '你有自然段意识，每段读得流利'
     : fluencyStars === 2
-      ? '你知道自然段之间要停一停，大部分语句读得很通顺'
-      : '自然段之间停一停，把每段连起来读，会更通顺';
+      ? '你知道自然段之间要停一停，大部分语句读得很流利'
+      : '自然段之间停一停，把每段连起来读，会更流利';
   const correctness = correctnessStars === 3
-    ? '重点字读音准，“一”的变调和轻声“了”都读到位'
+    ? '重点字、轻声字和多音字词组都读准确'
     : correctnessStars === 2
-      ? '大部分重点字读音准，“一”的变调和轻声“了”再听一听会更好'
-      : '跟着示范再练重点字、“一”的变调和轻声“了”';
+      ? '大部分字词读音准，轻声字和多音字词组再听一听会更好'
+      : '跟着示范再练重点字、轻声字和多音字词组';
   const concreteIssue = selectPracticeIssue(report);
   if (!concreteIssue) {
     return {

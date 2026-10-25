@@ -1,6 +1,10 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import type { Request } from 'express';
-import type { AdminDashboardRange, StudentAccountInput } from '@shared/api.interface';
+import type {
+  AdminDashboardRange,
+  StudentAccountInput,
+  StudentPasswordResetRequest,
+} from '@shared/api.interface';
 import { AuthService } from '../auth/auth.service';
 import { ClassroomService } from './classroom.service';
 
@@ -35,9 +39,13 @@ export class ClassroomController {
   }
 
   @Post('students/:id/reset-password')
-  async resetPassword(@Req() req: Request, @Param('id') id: string) {
+  async resetPassword(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() body: StudentPasswordResetRequest,
+  ) {
     await this.auth.requireAccount(req, 'admin');
-    return this.classroom.resetPassword(id);
+    return this.classroom.resetPassword(id, body?.newPassword);
   }
 
   @Get('students/:id/attempts')

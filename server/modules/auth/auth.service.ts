@@ -10,7 +10,12 @@ import { and, eq, gt, isNull, sql } from 'drizzle-orm';
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import type { Request } from 'express';
 import { userAccount, userSession } from '@server/database/schema';
-import type { AccountRole, AccountView, LoginRequest } from '@shared/api.interface';
+import type {
+  AccountRole,
+  AccountView,
+  ChangePasswordRequest,
+  LoginRequest,
+} from '@shared/api.interface';
 
 export const SESSION_COOKIE = 'reading_session';
 const SESSION_DAYS = 7;
@@ -34,6 +39,7 @@ export class AuthService {
       studentNo: account.studentNo,
       className: account.className,
       status: account.status,
+      mustChangePassword: account.mustChangePassword,
     };
   }
 
@@ -124,6 +130,28 @@ export class AuthService {
     if (!account) throw new UnauthorizedException('请先登录');
     if (role && account.role !== role) throw new ForbiddenException('无权访问');
     return account;
+  }
+
+  async changePassword(accountId: string, input: ChangePasswordRequest) {
+    if (!input.currentPassword || !input.newPassword) {
+      throw new BadRequestException('请输入当前密码和新密码');
+    }
+    const [account] = await this.db.select().from(userAccount)
+      .where(eq(userAccount.id, accountId)).limit(1);
+    if (!account || !this.verifyPassword(input.currentPassword, account.passwordHash)) {
+      throw new UnauthorizedException('当前密码不正确');
+    }
+    if (input.currentPassword === input.newPassword) {
+      throw new BadRequestException('新密码不能与当前密码相同');
+    }
+    const [updated] = await this.db.update(userAccount).set({
+      passwordHash: this.hashPassword(input.newPassword),
+      mustChangePassword: false,
+      failedLoginCount: 0,
+      lockedUntil: null,
+      updatedAt: new Date(),
+    }).where(eq(userAccount.id, accountId)).returning();
+    return this.accountView(updated);
   }
 
   async logout(req: Request) {

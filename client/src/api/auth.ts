@@ -1,4 +1,4 @@
-import type { LoginRequest, LoginResult } from '@shared/api.interface';
+import type { ChangePasswordRequest, LoginRequest, LoginResult } from '@shared/api.interface';
 import { apiRequest } from './http';
 
 export async function getSession(): Promise<LoginResult | null> {
@@ -17,4 +17,14 @@ export async function login(input: LoginRequest): Promise<LoginResult> {
 
 export async function logout() {
   await apiRequest({ url: '/api/auth/logout', method: 'POST', meta: { autoJumpToLogin: false } });
+}
+
+export async function changePassword(input: ChangePasswordRequest): Promise<LoginResult> {
+  const response = await apiRequest<LoginResult>({
+    url: '/api/auth/change-password',
+    method: 'POST',
+    data: input,
+    meta: { autoJumpToLogin: false },
+  });
+  return response.data;
 }

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import type { LoginRequest, LoginResult } from '@shared/api.interface';
+import type { ChangePasswordRequest, LoginRequest, LoginResult } from '@shared/api.interface';
 import { AuthService, SESSION_COOKIE } from './auth.service';
 
 @Controller('api/auth')
@@ -35,5 +35,11 @@ export class AuthController {
     await this.auth.logout(req);
     res.clearCookie(SESSION_COOKIE, { path: '/' });
     return { ok: true };
+  }
+
+  @Post('change-password')
+  async changePassword(@Req() req: Request, @Body() input: ChangePasswordRequest): Promise<LoginResult> {
+    const account = await this.auth.requireAccount(req);
+    return { account: await this.auth.changePassword(account.id, input) };
   }
 }

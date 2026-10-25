@@ -46,6 +46,7 @@ export class ClassroomService {
       studentNo: account.studentNo,
       className: account.className,
       status: account.status,
+      mustChangePassword: account.mustChangePassword,
     };
   }
 
@@ -71,6 +72,7 @@ export class ClassroomService {
         displayName,
         studentNo: input.studentNo?.trim() || null,
         className: input.className?.trim() || null,
+        mustChangePassword: true,
       }).returning();
       credentials.push({ account: this.accountView(account), initialPassword });
     }
@@ -85,10 +87,11 @@ export class ClassroomService {
     return this.accountView(account);
   }
 
-  async resetPassword(id: string) {
-    const initialPassword = this.generatePassword();
+  async resetPassword(id: string, requestedPassword?: string) {
+    const initialPassword = requestedPassword?.trim() || this.generatePassword();
     const [account] = await this.db.update(userAccount).set({
       passwordHash: this.auth.hashPassword(initialPassword),
+      mustChangePassword: true,
       failedLoginCount: 0,
       lockedUntil: null,
       updatedAt: new Date(),
@@ -238,7 +241,12 @@ export class ClassroomService {
           pageNo: page.pageNo,
           pageType: page.pageType,
           text: page.textContent,
-          pinyin: page.pinyinJson as { text: string; pinyin: string }[],
+          pinyin: Array.isArray(page.pinyinJson)
+            ? page.pinyinJson as { text: string; pinyin: string }[]
+            : ((page.pinyinJson as { tokens?: { text: string; pinyin: string }[] })?.tokens || []),
+          scenePrompt: Array.isArray(page.pinyinJson)
+            ? ''
+            : ((page.pinyinJson as { scenePrompt?: string })?.scenePrompt || ''),
           illustrationUrl: await signedStorageObjectUrl(this.files, page.illustrationUrl),
           demoAudioUrl: await signedStorageObjectUrl(this.files, page.demoAudioUrl),
           videoStartMs: page.videoStartMs,

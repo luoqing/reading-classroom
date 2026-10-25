@@ -40,12 +40,12 @@ const autumnRubric = {
     neutralTargets: ['天气凉了', '树叶黄了', '秋天来了'],
   },
   delivery: {
-    yiTargets: [
-      { label: '一片片', tone: 2, reading: 'yí' },
-      { label: '一群', tone: 4, reading: 'yì' },
-      { label: '第一处“一会儿”', tone: 2, reading: 'yí' },
-      { label: '第二处“一会儿”', tone: 2, reading: 'yí' },
-      { label: '“一”字', tone: 1, reading: 'yī' },
+    pronunciationTargets: [
+      { char: '一', phrase: '一片片', tone: 2, reading: 'yí' },
+      { char: '一', phrase: '一群', tone: 4, reading: 'yì' },
+      { char: '一', phrase: '一会儿', tone: 2, reading: 'yí' },
+      { char: '一', phrase: '一会儿', tone: 2, reading: 'yí' },
+      { char: '一', phrase: '一字', tone: 1, reading: 'yī' },
     ],
   },
   thresholds: { normalPhoneLevel: 3, targetPhoneLevel: 2 },
@@ -280,8 +280,53 @@ test('Autumn rates neutral 了 under natural and 一 tone changes under delivery
   assert.equal(goals.delivery.stars, 3);
   assert.equal(goals.natural.stars, 3);
   assert.equal(goals.natural.count, '3/3处轻声');
-  assert.equal(goals.delivery.count, '5/5处“一”的变调');
+  assert.equal(goals.delivery.count, '5/5处多音字词组');
   assert.equal(goals.delivery.issues.length, 0);
+});
+
+test('legacy Autumn neutral targets remain part of read-accurately', () => {
+  const legacyRubric = {
+    ...autumnRubric,
+    natural: { ...autumnRubric.natural, neutralTargets: undefined },
+    delivery: {
+      ...autumnRubric.delivery,
+      neutralTargets: ['天气凉了', '树叶黄了', '秋天来了'],
+    },
+  };
+  const goals = buildLessonGoals({
+    words: deliveryWords(),
+    scores: {},
+    aligned: true,
+    text: '一一一一一了了了',
+    confidentIssues: [],
+    rubric: legacyRubric,
+  });
+
+  assert.equal(goals.natural.stars, 3);
+  assert.equal(goals.natural.count, '3/3处轻声');
+  assert.equal(goals.correctness.stars, 3);
+});
+
+test('repeated polyphonic phrases match the corresponding occurrence in source order', () => {
+  const text = '一片片一群一会儿一会儿一字';
+  const expectedTones = new Map([[0, 2], [3, 4], [5, 2], [8, 2], [11, 1]]);
+  const words = [...text].map((character, position) => word(character, position, {
+    toneAnalysis: expectedTones.has(position)
+      ? { tone: expectedTones.get(position), confidence: .8 }
+      : undefined,
+  }));
+  const correct = buildLessonGoals({
+    words, scores: {}, aligned: true, text, confidentIssues: [], rubric: autumnRubric,
+  });
+  assert.equal(correct.delivery.stars, 3);
+
+  words[8].toneAnalysis = { tone: 4, confidence: .8 };
+  const mismatched = buildLessonGoals({
+    words, scores: {}, aligned: true, text, confidentIssues: [], rubric: autumnRubric,
+  });
+  assert.equal(mismatched.delivery.stars, 2);
+  assert.equal(mismatched.delivery.issues.length, 1);
+  assert.match(mismatched.delivery.issues[0].labels.join(''), /一会儿.*yí/u);
 });
 
 test('Autumn exposes two ratings with the requested sub-points', () => {
@@ -303,11 +348,11 @@ test('Autumn exposes two ratings with the requested sub-points', () => {
   assert.equal(goals.correctness.stars, 3);
   assert.deepEqual(
     goals.fluency.details.map(detail => detail.label),
-    ['自然段停顿', '每段读通顺'],
+    ['自然段停顿', '每段读流利'],
   );
   assert.deepEqual(
     goals.correctness.details.map(detail => detail.label),
-    ['重点字', '“一”的变调', '轻声“了”'],
+    ['重点字', '多音字与变调', '轻声字词'],
   );
 });
 
@@ -323,7 +368,7 @@ test('Autumn delivery points to 一群 when its 一 is not fourth tone', () => {
 
   assert.equal(goals.delivery.stars, 2);
   assert.equal(goals.delivery.issues.length, 1);
-  assert.match(goals.delivery.issues[0].labels.join(''), /一群.*四声/);
+  assert.match(goals.delivery.issues[0].labels.join(''), /一群.*yì/u);
 });
 
 test('neutral 了 belongs to natural and punctuation pauses are ignored for Autumn', () => {
@@ -347,7 +392,7 @@ test('neutral 了 belongs to natural and punctuation pauses are ignored for Autu
   assert.match(goals.natural.practice, /轻声“了”/);
 });
 
-test('a lesson with its own rubric receives all three targeted ratings', () => {
+test('a lesson without neutral or polyphone targets does not invent those ratings', () => {
   const words = [
     word('房', 0),
     word('子', 1),
@@ -367,9 +412,8 @@ test('a lesson with its own rubric receives all three targeted ratings', () => {
 
   assert.equal(goals.targeted, true);
   assert.equal(goals.accuracy.stars, 3);
-  assert.equal(goals.natural.stars, 3);
-  assert.equal(goals.delivery.stars, 3);
-  assert.match(goals.delivery.practice, /疑问语气/);
+  assert.equal(goals.natural.stars, null);
+  assert.equal(goals.delivery.stars, null);
 });
 
 test('teacher comment covers all three dimensions and leads with encouragement', () => {
@@ -385,8 +429,8 @@ test('teacher comment covers all three dimensions and leads with encouragement',
 
   assert.match(comment.text, /^先夸夸你/);
   assert.match(comment.text, /读准确：3颗星，九个重点字很清楚/);
-  assert.match(comment.text, /读自然：3颗星，断句自然/);
-  assert.match(comment.text, /读到位：2颗星，多数轻声和变调到位/);
+  assert.match(comment.text, /轻声字词：3颗星，断句自然/);
+  assert.match(comment.text, /多音字与变调：2颗星，多数轻声和变调到位/);
   assert.match(comment.text, /一群读四声/);
   assert.match(comment.text, /听一听.*自己的回放.*核实/);
   assert.equal(comment.dimension, 'delivery');
@@ -407,7 +451,7 @@ test('teacher comment practices the lowest-rated dimension instead of the first 
   const comment = buildTeacherComment(report);
 
   assert.equal(comment.dimension, 'delivery');
-  assert.match(comment.text, /最值得再练的是读到位/);
+  assert.match(comment.text, /最值得再练的是多音字与变调/);
   assert.match(comment.text, /第一处“一会儿”/);
 });
 
@@ -446,7 +490,7 @@ test('two-dimension teacher comment is warm, concrete, child-friendly, and conci
   assert.match(comment.text, /自然段/u);
   assert.match(comment.text, /重点字/u);
   assert.match(comment.text, /轻声/u);
-  assert.match(comment.text, /“一”的变调/u);
+  assert.match(comment.text, /多音字词组/u);
   assert.ok([...comment.text].length <= 100);
   assert.equal(comment.dimension, null);
 });
@@ -569,8 +613,8 @@ test('the dual-provider comparison shows star ratings instead of raw scores', ()
 
   assert.ok(start >= 0 && end > start);
   assert.match(providerCardSource, /class="provider-stars"/u);
-  assert.match(providerCardSource, /读通顺星级/u);
-  assert.match(providerCardSource, /读正确星级/u);
+  assert.match(providerCardSource, /读流利星级/u);
+  assert.match(providerCardSource, /读准确星级/u);
   assert.doesNotMatch(providerCardSource, /scoreText|total_score|accuracy_score|fluency_score|integrity_score|provider-metrics/u);
 });
 
