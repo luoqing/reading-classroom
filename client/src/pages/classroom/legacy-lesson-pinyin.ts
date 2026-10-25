@@ -88,7 +88,12 @@ export function paragraphsFromPagePinyin(fullText: string, pages: LessonDraftPag
     const start = fullText.indexOf(page.text, searchFrom);
     if (start < 0) continue;
     searchFrom = start + page.text.length;
-    page.pinyin.forEach((token, index) => tokensByPosition.set(start + index, token));
+    let offset = 0;
+    page.pinyin.forEach(token => {
+      if (!token.text) return;
+      tokensByPosition.set(start + offset, token);
+      offset += [...token.text].length;
+    });
   }
 
   let paragraphStart = 0;

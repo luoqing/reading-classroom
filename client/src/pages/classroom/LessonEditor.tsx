@@ -7,6 +7,7 @@ import {
   ImagePlus,
   Lightbulb,
   LoaderCircle,
+  Minus,
   Mic,
   Square,
   Plus,
@@ -373,10 +374,13 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
     });
   };
 
-  const addToken = (pageIndex: number) => setDraft(current => draftWithPages(current,
-    current.pages.map((page, index) => index === pageIndex
-      ? { ...page, pinyin: [...page.pinyin, { text: '', pinyin: '', needsReview: true }] }
-      : page),
+  const addToken = (pageIndex: number, beforeIndex?: number) => setDraft(current => draftWithPages(current,
+    current.pages.map((page, index) => {
+      if (index !== pageIndex) return page;
+      const pinyin = [...page.pinyin];
+      pinyin.splice(beforeIndex ?? pinyin.length, 0, { text: '', pinyin: '', needsReview: true });
+      return { ...page, pinyin };
+    }),
     pageIndex,
   ));
 
@@ -658,13 +662,14 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
         {!!reviewNotes.length && <section className="lesson-review-notes"><strong>老师需要核对</strong>{reviewNotes.map(note => <p key={note}><Check />{note}</p>)}</section>}
 
         <section className="lesson-editor-card">
-          <div className="lesson-section-title"><div><span className="lesson-section-index">STEP 02 / 校对内容</span><h3>逐字校对文字和拼音</h3><p>上方改拼音，下方改文字；改字后请重新确认读音。输入 yi2 会自动变成 yí。</p></div></div>
+          <div className="lesson-section-title"><div><span className="lesson-section-index">STEP 02 / 校对内容</span><h3>逐字校对文字和拼音</h3><p>上方改拼音，下方改文字；移到字格顶部可在前面加字或删除当前字。输入 yi2 会自动变成 yí。</p></div></div>
           <div className="pinyin-edit-pages">{draft.pages.map((page, pageIndex) => <article key={page.id || pageIndex}>
             <small>分镜 {pageIndex + 1}</small><p>{page.text}</p>
             <div className="pinyin-token-grid">{page.pinyin.map((token, tokenIndex) => <div className={`pinyin-token${token.needsReview ? ' needs-review' : ''}`} key={tokenIndex}>
               <Input value={token.pinyin} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的拼音`} onChange={event => updateToken(pageIndex, tokenIndex, { pinyin: event.target.value })} onBlur={event => updateToken(pageIndex, tokenIndex, { pinyin: normalizePinyin(event.target.value), needsReview: !!token.text && !/[，。！？、；：,.!?;:\s]/u.test(token.text) && !event.target.value.trim() })} />
-              <Input value={token.text} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的文字`} maxLength={1} placeholder="字" onChange={event => { if (event.target.value || !token.text) updateToken(pageIndex, tokenIndex, { text: event.target.value }); }} />
-              <button type="button" className="pinyin-token-delete" aria-label={`删除第${pageIndex + 1}段第${tokenIndex + 1}格的文字和拼音`} onClick={() => setPendingTokenRemoval({ pageIndex, tokenIndex, text: token.text })}><X size={13} aria-hidden="true" /></button>
+              <Input id={`pinyin-text-${pageIndex}-${tokenIndex}`} value={token.text} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的文字`} maxLength={1} placeholder="字" onChange={event => { if (event.target.value || !token.text) updateToken(pageIndex, tokenIndex, { text: event.target.value }); }} />
+              <button type="button" className="pinyin-token-action pinyin-token-insert" aria-label={`在第${pageIndex + 1}段第${tokenIndex + 1}字前添加字格`} onClick={() => { addToken(pageIndex, tokenIndex); requestAnimationFrame(() => document.getElementById(`pinyin-text-${pageIndex}-${tokenIndex}`)?.focus()); }}><Plus size={13} aria-hidden="true" /></button>
+              <button type="button" className="pinyin-token-action pinyin-token-delete" aria-label={`删除第${pageIndex + 1}段第${tokenIndex + 1}格的文字和拼音`} onClick={() => setPendingTokenRemoval({ pageIndex, tokenIndex, text: token.text })}><Minus size={13} aria-hidden="true" /></button>
             </div>)}<button type="button" className="pinyin-add-token" onClick={() => addToken(pageIndex)}><Plus size={15} />添加字</button></div>
           </article>)}</div>
         </section>

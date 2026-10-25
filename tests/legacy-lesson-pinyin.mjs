@@ -68,4 +68,6 @@ for (const lesson of localLessons) {
 const [autumn, house] = localLessons;
 assert.equal(restoreLegacyPagePinyin(autumn)[1][0].pinyin, 'tiān');
 assert.equal(restoreLegacyPagePinyin(house)[0][0].pinyin, 'yí');
+const firstPageTokens = restoreLegacyPagePinyin(house)[0];
+assert.equal(paragraphsFromPagePinyin(house.fullText, [{ ...house.pages[0], pinyin: [{ text: '', pinyin: '' }, ...firstPageTokens] }])[0], house.pinyin.paragraphs[0]);
 console.log('Legacy lesson pinyin restoration passed for 秋天 and 哪座房子最漂亮');

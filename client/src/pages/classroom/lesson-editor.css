@@ -157,10 +157,12 @@ body:has(.lesson-editor-backdrop) [data-slot="alert-dialog-overlay"] { z-index: 
 .pinyin-token input { height: 30px; padding: 2px 3px; border: 0 !important; background: transparent !important; text-align: center; font-family: "KaiTi", "Kaiti SC", serif; }
 .pinyin-token input:first-of-type { color: #38694c !important; }
 .pinyin-token input:last-of-type { color: var(--editor-ink) !important; font-size: 17px !important; }
-.pinyin-token-delete { position: absolute; top: 1px; right: 1px; display: grid; width: 20px; height: 20px; place-items: center; padding: 0; border: 0; border-radius: 0; background: transparent; color: #a35443; opacity: 0; transition: opacity .15s ease; }
-.pinyin-token-delete:hover, .pinyin-token-delete:focus-visible { opacity: 1; }
-.pinyin-token-delete:focus-visible { outline: 2px solid #a35443; outline-offset: 2px; }
-@media (hover: none) { .pinyin-token-delete { opacity: 1; } }
+.pinyin-token-action { position: absolute; top: -8px; z-index: 1; display: grid; width: 19px; height: 19px; place-items: center; padding: 0; border: 0; border-radius: 0; background: #fbfaf5; opacity: 0; transition: opacity .15s ease; }
+.pinyin-token-insert { left: 1px; color: #286345; }
+.pinyin-token-delete { right: 1px; color: #a35443; }
+.pinyin-token:hover .pinyin-token-action, .pinyin-token-action:hover, .pinyin-token-action:focus-visible { opacity: 1; }
+.pinyin-token-action:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+@media (hover: none) { .pinyin-token-action { opacity: 1; } }
 .pinyin-add-token { display: grid; place-items: center; align-content: center; width: 60px; min-height: 74px; gap: 4px; border: 1px dashed #c6d5c4; border-radius: 9px; background: #f5f9f3; color: var(--editor-green); font-size: 11px; cursor: pointer; }
 .pinyin-add-token:hover { border-color: var(--editor-green); background: #eaf2e8; }
 .rubric-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 14px; }
