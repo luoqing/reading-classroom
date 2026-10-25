@@ -17,7 +17,7 @@
 .lesson-editor-sidebar nav svg { width: 19px; height: 19px; }
 .lesson-editor-sidebar nav .current { background: #e9efe6; color: #204b39; font-weight: 700; }
 .lesson-editor-sidebar-art { position: relative; height: 268px; flex: none; margin-top: auto; background-image: url('https://bytedance.feishu.link/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1880026588711952.png'); background-position: left bottom; background-size: 220px auto; background-repeat: no-repeat; }
-.lesson-editor-sidebar-art p { position: absolute; top: 10px; right: 12px; margin: 0; color: #777667; font: italic 12px/1.9 "Noto Serif SC", "Songti SC", serif; text-align: center; transform: rotate(-6deg); }
+.lesson-editor-sidebar-art p { position: absolute; top: 48px; right: 12px; margin: 0; color: #777667; font: italic 12px/1.9 "Noto Serif SC", "Songti SC", serif; text-align: center; transform: rotate(-6deg); }
 
 .lesson-editor {
   --editor-green: #244d3b;
@@ -87,7 +87,7 @@
 .photo-guide b { display: grid; place-items: center; width: 25px; height: 25px; flex: none; border-radius: 50%; background: #e3eee3; color: var(--editor-green); font: 700 12px Georgia, serif; }
 .photo-guide-image { display: block; height: 78px; border-radius: 8px; background-color: #ecede6; background-image: url('https://bytedance.feishu.link/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1880027021445401.png'); background-size: 100% auto; background-repeat: no-repeat; }
 .photo-guide-image-1 { background-position: center top; }
-.photo-guide-image-2 { background-position: center center; }
+.photo-guide-image-2 { border: 1px solid #dfc5b9; background-image: url('/content/media/photo-guide-glare-shadow.png'); background-position: center 58%; background-size: cover; }
 .photo-guide-image-3 { background-position: center bottom; }
 .photo-guide p { margin: 7px 0 0; color: #798177; font-size: 11px; line-height: 1.6; }
 .photo-preview-row { display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 5px; }
