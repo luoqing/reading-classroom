@@ -9,11 +9,9 @@ import {
   ImagePlus,
   Lightbulb,
   LoaderCircle,
-  Merge,
   Plus,
   PencilLine,
   Save,
-  Scissors,
   Sparkles,
   Target,
   Trash2,
@@ -25,6 +23,7 @@ import type {
   AdminLessonSummary,
   LessonDraftInput,
   LessonDraftPageInput,
+  IllustrationStyle,
   LessonRecognitionImage,
   PinyinToken,
 } from '@shared/api.interface';
@@ -117,6 +116,7 @@ function lessonToDraft(lesson?: AdminLessonSummary | null): LessonDraftInput {
       text: page.text,
       pinyin: page.pinyin,
       scenePrompt: page.scenePrompt || `表现“${page.text}”的儿童水彩绘本插画`,
+      illustrationStyle: page.illustrationStyle || 'watercolor',
       illustrationUrl: page.illustrationStorageUrl || page.illustrationUrl,
       illustrationPreviewUrl: page.illustrationUrl,
     })),
@@ -156,6 +156,12 @@ const reindexPages = (pages: LessonDraftPageInput[]) => pages.map((page, index) 
   ...page,
   pageNo: index + 1,
 }));
+const ILLUSTRATION_STYLES: Array<{ value: IllustrationStyle; label: string }> = [
+  { value: 'watercolor', label: '水彩插画' },
+  { value: 'storybook', label: '儿童绘本' },
+  { value: 'chinese', label: '中国风' },
+  { value: 'cartoon', label: '卡通插画' },
+];
 
 async function fileToImage(file: File): Promise<LessonRecognitionImage> {
   if (file.size > 600 * 1024) {
@@ -219,11 +225,12 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
       pages: current.pages.map((page, pageIndex) => {
         if (pageIndex !== index) return page;
         const contentChanged = (patch.text !== undefined && patch.text !== page.text)
-          || (patch.scenePrompt !== undefined && patch.scenePrompt !== page.scenePrompt);
+          || (patch.scenePrompt !== undefined && patch.scenePrompt !== page.scenePrompt)
+          || (patch.illustrationStyle !== undefined && patch.illustrationStyle !== page.illustrationStyle);
         return { ...page, ...(contentChanged ? { illustrationUrl: null, illustrationPreviewUrl: null } : {}), ...patch };
       }),
     }));
-    if (patch.text !== undefined || patch.scenePrompt !== undefined) {
+    if (patch.text !== undefined || patch.scenePrompt !== undefined || patch.illustrationStyle !== undefined) {
       setIllustrationErrors(current => ({ ...current, [index]: '' }));
     }
   };
@@ -273,71 +280,6 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
     updatePage(pageIndex, { pinyin: tokens });
   };
 
-  const splitPage = (index: number) => {
-    const page = draft.pages[index];
-    const punctuationIndex = [...page.text].findIndex((char, charIndex) => (
-      charIndex > 0 && /[。！？；]/u.test(char) && charIndex < [...page.text].length - 1
-    ));
-    const splitAt = punctuationIndex >= 0 ? punctuationIndex + 1 : Math.ceil([...page.text].length / 2);
-    const chars = [...page.text];
-    const firstText = chars.slice(0, splitAt).join('').trim();
-    const secondText = chars.slice(splitAt).join('').trim();
-    if (!firstText || !secondText) {
-      setMessage('这条分镜太短，建议先在原文中补充标点后再拆分');
-      return;
-    }
-    const first: LessonDraftPageInput = {
-      ...page,
-      text: firstText,
-      pinyin: page.pinyin.slice(0, splitAt),
-      scenePrompt: `表现“${firstText}”的儿童水彩绘本插画`,
-      illustrationUrl: null,
-      illustrationPreviewUrl: null,
-    };
-    const second: LessonDraftPageInput = {
-      ...page,
-      id: undefined,
-      text: secondText,
-      pinyin: page.pinyin.slice(splitAt),
-      scenePrompt: `表现“${secondText}”的儿童水彩绘本插画`,
-      illustrationUrl: null,
-      illustrationPreviewUrl: null,
-    };
-    setDraft(current => ({
-      ...current,
-      pages: reindexPages([
-        ...current.pages.slice(0, index),
-        first,
-        second,
-        ...current.pages.slice(index + 1),
-      ]),
-    }));
-    setIllustrationErrors({});
-  };
-
-  const mergeNext = (index: number) => {
-    const current = draft.pages[index];
-    const next = draft.pages[index + 1];
-    if (!next) return;
-    const merged: LessonDraftPageInput = {
-      ...current,
-      text: `${current.text}${next.text}`,
-      pinyin: [...current.pinyin, ...next.pinyin],
-      scenePrompt: `${current.scenePrompt}；${next.scenePrompt}`,
-      illustrationUrl: null,
-      illustrationPreviewUrl: null,
-    };
-    setDraft(value => ({
-      ...value,
-      pages: reindexPages([
-        ...value.pages.slice(0, index),
-        merged,
-        ...value.pages.slice(index + 2),
-      ]),
-    }));
-    setIllustrationErrors({});
-  };
-
   const addPage = () => {
     setDraft(current => ({
       ...current,
@@ -347,6 +289,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
         text: '',
         pinyin: [],
         scenePrompt: '',
+        illustrationStyle: 'watercolor',
         illustrationUrl: null,
         illustrationPreviewUrl: null,
       }]),
@@ -368,6 +311,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
         pageNo: index + 1,
         text: page.text,
         scenePrompt: page.scenePrompt,
+        illustrationStyle: page.illustrationStyle || 'watercolor',
       });
       updatePage(index, {
         illustrationUrl: result.illustrationUrl,
@@ -538,18 +482,14 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
         </section>}
 
       {!!draft.fullText && step === 3 && <section className="lesson-editor-card storyboard-editor">
-          <div className="lesson-section-title"><div><span className="lesson-section-index">STEP 04 / 画面准备</span><h3>分镜与逐张插画</h3><p>AI 已按自然段、标点和句意分镜。可拆分、合并或改画面描述，再逐张生成。</p></div><Button variant="outline" onClick={addPage}><Plus />添加分镜</Button></div>
-          <div className="illustration-progress"><span>已完成 <strong>{completedIllustrations} / {draft.pages.length}</strong> 幅画面</span><div><i style={{ width: `${draft.pages.length ? completedIllustrations / draft.pages.length * 100 : 0}%` }} /></div></div>
-          <div className="storyboard-list">{draft.pages.map((page, index) => <article key={`scene-${index}`}>
-            <div className="storyboard-number">{index + 1}</div>
-            <div className="storyboard-copy">
-              <label>对应原文<Textarea value={page.text} onChange={event => updatePage(index, { text: event.target.value })} /></label>
-              <label>画面描述<Textarea value={page.scenePrompt} onChange={event => updatePage(index, { scenePrompt: event.target.value })} /></label>
-              <div className="storyboard-actions"><Button size="sm" variant="outline" onClick={() => splitPage(index)}><Scissors />拆分</Button>{index < draft.pages.length - 1 && <Button size="sm" variant="outline" onClick={() => mergeNext(index)}><Merge />与下一条合并</Button>}<Button size="sm" variant="ghost" onClick={() => { setDraft(current => ({ ...current, pages: reindexPages(current.pages.filter((_, pageIndex) => pageIndex !== index)) })); setIllustrationErrors({}); }}><Trash2 />删除</Button></div>
-            </div>
-            <div className="storyboard-image"><small>插画预览</small>{page.illustrationUrl ? <img src={page.illustrationPreviewUrl || page.illustrationUrl} alt={`第${index + 1}幅插画`} onError={() => setIllustrationErrors(current => ({ ...current, [index]: '预览加载失败，请重新生成' }))} /> : <span className={illustrationErrors[index] ? 'failed' : ''}><ImagePlus />{illustrationErrors[index] ? '生成失败' : '等待生成'}</span>}{illustrationErrors[index] && <p className="illustration-error" role="alert">{illustrationErrors[index]}</p>}<Button size="sm" onClick={() => void generateOne(index)} disabled={generating.has(index)}>{generating.has(index) ? <LoaderCircle className="spin" /> : <Sparkles />}{generating.has(index) ? '正在生成…' : illustrationErrors[index] ? '重新生成' : page.illustrationUrl ? '替换插画' : '生成插画'}</Button></div>
+          <div className="storyboard-heading"><div><span className="lesson-section-index">STEP 04 / 画面准备</span><h3>为每一段准备画面</h3><p>根据课文内容生成插画，帮助学生更好地理解和朗读。</p></div><div className="illustration-progress"><span>已完成 <strong>{completedIllustrations} / {draft.pages.length}</strong> 幅画面</span><div role="progressbar" aria-valuenow={completedIllustrations} aria-valuemin={0} aria-valuemax={draft.pages.length} aria-label="插画完成进度"><i style={{ width: `${draft.pages.length ? completedIllustrations / draft.pages.length * 100 : 0}%` }} /></div></div></div>
+          <div className="storyboard-list">{draft.pages.map((page, index) => <article key={`scene-${page.id || index}`}>
+            <div className="storyboard-card-head"><strong>第 {index + 1} 段</strong><button type="button" onClick={() => { setDraft(current => ({ ...current, pages: reindexPages(current.pages.filter((_, pageIndex) => pageIndex !== index)) })); setIllustrationErrors({}); }} aria-label={`删除第${index + 1}段`} title="删除这一段"><Trash2 size={16} />删除</button></div>
+            <label className="storyboard-original">原文内容 <span>（可编辑）</span><Textarea value={page.text} placeholder="输入这一段的课文原文" onChange={event => updatePage(index, { text: event.target.value })} /><small>{page.text.length} / 500</small></label>
+            <div className="storyboard-scene"><label>画面描述 <span>（可编辑）</span><Textarea value={page.scenePrompt} placeholder="描述要画出的角色、动作和场景" onChange={event => updatePage(index, { scenePrompt: event.target.value })} /><small>{page.scenePrompt.length} / 200</small></label><div className="storyboard-style"><span>参考风格</span><div role="group" aria-label={`第${index + 1}段插画风格`}>{ILLUSTRATION_STYLES.map(style => <button key={style.value} type="button" className={(page.illustrationStyle || 'watercolor') === style.value ? 'selected' : ''} aria-pressed={(page.illustrationStyle || 'watercolor') === style.value} onClick={() => updatePage(index, { illustrationStyle: style.value })}>{style.label}</button>)}</div></div></div>
+            <div className="storyboard-image"><div className="storyboard-image-head"><span>插画预览</span>{page.illustrationUrl && <button type="button" onClick={() => void generateOne(index)} disabled={generating.has(index)}><Sparkles size={15} />替换</button>}</div>{page.illustrationUrl && !illustrationErrors[index] ? <img src={page.illustrationPreviewUrl || page.illustrationUrl} alt={`第${index + 1}幅插画`} onError={() => setIllustrationErrors(current => ({ ...current, [index]: '预览加载失败，请重新生成' }))} /> : <div className={`storyboard-image-empty${illustrationErrors[index] ? ' failed' : ''}`}><ImagePlus /><strong>{illustrationErrors[index] ? '生成失败，请重试' : '准备好生成插画'}</strong><span>{illustrationErrors[index] || '确认画面描述和风格后，生成这一段的插画。'}</span><Button size="sm" onClick={() => void generateOne(index)} disabled={generating.has(index)}>{generating.has(index) ? <LoaderCircle className="spin" /> : <Sparkles />}{generating.has(index) ? '正在生成…' : illustrationErrors[index] ? '重新生成' : '生成插画'}</Button></div>}</div>
           </article>)}</div>
-          <Button onClick={() => void generateAll()} disabled={!draft.pages.length || generating.size > 0 || completedIllustrations === draft.pages.length}><Sparkles />生成剩余插画</Button>
+          <div className="storyboard-footer-actions"><Button variant="outline" onClick={addPage}><Plus />添加一段</Button><Button onClick={() => void generateAll()} disabled={!draft.pages.length || generating.size > 0 || completedIllustrations === draft.pages.length}><Sparkles />生成剩余插画</Button></div>
         </section>}
 
       {!!draft.fullText && step === 4 && <section className="lesson-editor-card lesson-publish-card"><span className="lesson-section-index">STEP 05 / 确认发布</span><h3>最后检查一次</h3><p>发布后，学生就可以看到这篇课文并开始朗读。</p><div className="lesson-publish-summary"><div><small>课文</small><strong>{draft.title || '未填写标题'}</strong><span>{draft.gradeLabel || '未填写年级'}</span></div><div><small>分镜</small><strong>{draft.pages.length} 页</strong><span>正文与拼音已录入</span></div><div><small>插画</small><strong>{completedIllustrations} / {draft.pages.length} 幅</strong><span>{completedIllustrations === draft.pages.length ? '全部完成' : '仍有画面未生成'}</span></div></div><div className="lesson-publish-preview"><h4>学生看到的课文正文</h4><p>{draft.fullText}</p></div></section>}

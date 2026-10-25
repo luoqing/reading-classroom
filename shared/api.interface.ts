@@ -31,6 +31,8 @@ export interface PinyinToken {
   needsReview?: boolean;
 }
 
+export type IllustrationStyle = 'watercolor' | 'storybook' | 'chinese' | 'cartoon';
+
 export interface LessonPageView {
   id: string;
   pageNo: number;
@@ -38,6 +40,7 @@ export interface LessonPageView {
   text: string;
   pinyin: PinyinToken[];
   scenePrompt: string;
+  illustrationStyle?: IllustrationStyle;
   illustrationUrl: string | null;
   illustrationStorageUrl?: string | null;
   demoAudioUrl: string | null;
@@ -95,6 +98,7 @@ export interface LessonDraftPageInput {
   text: string;
   pinyin: PinyinToken[];
   scenePrompt: string;
+  illustrationStyle?: IllustrationStyle;
   illustrationUrl?: string | null;
   illustrationPreviewUrl?: string | null;
 }
@@ -130,6 +134,7 @@ export interface IllustrationGenerateRequest {
   pageNo: number;
   text: string;
   scenePrompt: string;
+  illustrationStyle?: IllustrationStyle;
 }
 
 export interface IllustrationGenerateResult {

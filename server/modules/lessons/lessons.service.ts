@@ -12,6 +12,7 @@ import { lesson, lessonPage } from '@server/database/schema';
 import type {
   IllustrationGenerateRequest,
   IllustrationGenerateResult,
+  IllustrationStyle,
   LessonCatalog,
   LessonDraftInput,
   LessonRecognitionRequest,
@@ -27,10 +28,17 @@ const ARK_RESPONSES_URL = 'https://ark.cn-beijing.volces.com/api/v3/responses';
 const ARK_IMAGES_URL = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
 const DEFAULT_OCR_MODEL = 'ep-20260502164425-7tq6j';
 const DEFAULT_IMAGE_MODEL = 'doubao-seedream-5-0-lite-260128';
+const ILLUSTRATION_STYLES: Record<IllustrationStyle, string> = {
+  watercolor: '清新透明的水彩插画，柔和晕染与纸张肌理',
+  storybook: '温暖细腻的儿童绘本插画，柔和色彩与手绘笔触',
+  chinese: '适合儿童阅读的中国风插画，淡彩水墨与东方构图',
+  cartoon: '明快亲切的卡通插画，简洁线条与鲜明色块',
+};
 
 type StoredPagePinyin = PinyinToken[] | {
   tokens?: PinyinToken[];
   scenePrompt?: string;
+  illustrationStyle?: IllustrationStyle;
 };
 
 interface RecognizedParagraph {
@@ -55,7 +63,7 @@ export class LessonsService {
   ) {}
 
   private pagePinyin(value: unknown) {
-    if (Array.isArray(value)) return { tokens: value as PinyinToken[], scenePrompt: '' };
+    if (Array.isArray(value)) return { tokens: value as PinyinToken[], scenePrompt: '', illustrationStyle: 'watercolor' as IllustrationStyle };
     const stored = value as StoredPagePinyin | null;
     return {
       tokens: stored && !Array.isArray(stored) && Array.isArray(stored.tokens)
@@ -64,6 +72,9 @@ export class LessonsService {
       scenePrompt: stored && !Array.isArray(stored) && typeof stored.scenePrompt === 'string'
         ? stored.scenePrompt
         : '',
+      illustrationStyle: stored && !Array.isArray(stored) && stored.illustrationStyle && ILLUSTRATION_STYLES[stored.illustrationStyle]
+        ? stored.illustrationStyle
+        : 'watercolor',
     };
   }
 
@@ -136,7 +147,7 @@ export class LessonsService {
       return { type: 'input_image', image_url: image.dataUrl };
     });
     const prompt = `你是一名小学语文教材编辑。请识别图片中的课文，严格返回 JSON，不要返回 Markdown。\n
-JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","paragraphs":[{"text":"一个完整自然段","pinyin":[{"text":"单个汉字或标点","pinyin":"带声调拼音；标点为空字符串","needsReview":true}],"scenes":[{"text":"适合一幅插画的原文，可包含一句或语义完整的相邻短句","scenePrompt":"无文字、无字幕的儿童水彩绘本画面描述"}]}],"reviewNotes":["需要老师核对的内容"],"rubric":{"natural":{"kind":"fluency","description":"读流利的具体要求","neutralTargets":["含轻声的原文词组"]},"accuracyTargets":[{"char":"重点字","reading":"拼音"}],"delivery":{"description":"多音字和变调等读准确要求","pronunciationTargets":[{"char":"要检查的多音字","phrase":"该字所在的原文词组","reading":"这个字在词组中的带调拼音","tone":2}]}}}\n
+JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","paragraphs":[{"text":"一个完整自然段","pinyin":[{"text":"单个汉字或标点","pinyin":"带声调拼音；标点为空字符串","needsReview":true}],"scenes":[{"text":"适合一幅插画的原文，可包含一句或语义完整的相邻短句","scenePrompt":"只描述人物、动作、场景和氛围，不指定画风，不含文字或字幕"}]}],"reviewNotes":["需要老师核对的内容"],"rubric":{"natural":{"kind":"fluency","description":"读流利的具体要求","neutralTargets":["含轻声的原文词组"]},"accuracyTargets":[{"char":"重点字","reading":"拼音"}],"delivery":{"description":"多音字和变调等读准确要求","pronunciationTargets":[{"char":"要检查的多音字","phrase":"该字所在的原文词组","reading":"这个字在词组中的带调拼音","tone":2}]}}}\n
 要求：只识别课文标题和正文，忽略页码、插图旁孤立的生字、栏目名、“读一读”等学习提示，也不要把标题重复写进正文；保留正文原有自然段和标点；逐字给出拼音；多音字、轻声、“一/不”变调标 needsReview=true；“一”在四声前通常标 yí，在一二三声前通常标 yì，单独或序数语义时才标 yī；先按自然段、标点和语义分镜，不要机械地每逗号一张图；教学重点只有“读流利”和“读准确”两个维度，其中读准确检查重点字音节和声调、轻声字、多音字及变调；多音字不能只返回单个字，必须用 pronunciationTargets 按“字 + 原文词组 + 目标读音”逐条返回，同一个字在不同词组中出现时分别返回，例如“一片片 / yí”“一群 / yì”“一个 / yí”。`;
     const payload = await this.arkRequest(ARK_RESPONSES_URL, {
       model: this.arkSetting('ARK_OCR_MODEL_ID') || DEFAULT_OCR_MODEL,
@@ -160,7 +171,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
       const paragraphText = paragraph.text!.trim();
       const scenes = Array.isArray(paragraph.scenes) && paragraph.scenes.length
         ? paragraph.scenes
-        : [{ text: paragraphText, scenePrompt: `表现“${paragraphText}”的儿童水彩绘本插画` }];
+        : [{ text: paragraphText, scenePrompt: `表现“${paragraphText}”的场景` }];
       let searchFrom = 0;
       for (const scene of scenes) {
         const text = scene.text?.trim() || paragraphText;
@@ -176,7 +187,8 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
           pageType: 'body',
           text,
           pinyin: tokens.length ? tokens : paragraphTokens,
-          scenePrompt: scene.scenePrompt?.trim() || `表现“${text}”的儿童水彩绘本插画`,
+          scenePrompt: scene.scenePrompt?.trim() || `表现“${text}”的场景`,
+          illustrationStyle: 'watercolor',
           illustrationUrl: null,
         });
       }
@@ -219,7 +231,8 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
     if (!input.text?.trim() || !input.scenePrompt?.trim()) {
       throw new BadRequestException('请先填写分镜原文和画面描述');
     }
-    const prompt = `为小学一年级语文课文《${input.lessonTitle}》绘制第 ${input.pageNo} 幅插画。${input.scenePrompt}。清新乡村水彩绘本风，儿童友好，4:3 横版，人物与场景风格统一，画面中不要出现任何文字、拼音、字幕、水印或边框。`;
+    const style = ILLUSTRATION_STYLES[input.illustrationStyle || 'watercolor'] || ILLUSTRATION_STYLES.watercolor;
+    const prompt = `为小学一年级语文课文《${input.lessonTitle}》绘制第 ${input.pageNo} 幅插画。画面内容：${input.scenePrompt}。最终画风严格采用${style}；场景描述中的其他画风词不生效。儿童友好，4:3 横版，人物与场景风格统一，画面中不要出现任何文字、拼音、字幕、水印或边框。`;
     const generated = await this.arkRequest(ARK_IMAGES_URL, {
       model: this.arkSetting('ARK_IMAGE_MODEL_ID') || DEFAULT_IMAGE_MODEL,
       prompt,
@@ -301,7 +314,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
       pageNo: index + 1,
       pageType: page.pageType || 'body',
       textContent: page.text.trim(),
-      pinyinJson: { tokens: page.pinyin || [], scenePrompt: page.scenePrompt || '' },
+      pinyinJson: { tokens: page.pinyin || [], scenePrompt: page.scenePrompt || '', illustrationStyle: page.illustrationStyle || 'watercolor' },
       illustrationUrl: page.illustrationUrl || null,
     })));
     return this.getById(lessonId);
@@ -337,6 +350,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
           text: page.textContent,
           pinyin: storedPinyin.tokens,
           scenePrompt: storedPinyin.scenePrompt,
+          illustrationStyle: storedPinyin.illustrationStyle,
           illustrationStorageUrl: page.illustrationUrl,
           illustrationUrl: await signedStorageObjectUrl(this.files, page.illustrationUrl),
           demoAudioUrl: await signedStorageObjectUrl(this.files, page.demoAudioUrl),
