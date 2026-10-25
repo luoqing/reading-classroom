@@ -39,7 +39,7 @@ import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import TeacherWorkspaceSidebar, { type WorkspaceView } from './TeacherWorkspaceSidebar';
 import { paragraphsFromPagePinyin, restoreLegacyPagePinyin } from './legacy-lesson-pinyin';
-import { countChangedPagesWithRetainedMedia } from './lesson-media-review';
+import { getChangedPagesWithRetainedMedia, type ChangedPageWithRetainedMedia } from './lesson-media-review';
 
 interface LessonEditorProps {
   lesson?: AdminLessonSummary | null;
@@ -242,7 +242,8 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
   const savedSnapshot = useRef(JSON.stringify(lessonToDraft(lesson)));
   const [pendingDestination, setPendingDestination] = useState<Parameters<LessonEditorProps['onNavigate']>[0] | 'close' | null>(null);
   const [pendingTokenRemoval, setPendingTokenRemoval] = useState<{ pageIndex: number; tokenIndex: number; text: string } | null>(null);
-  const [pendingSave, setPendingSave] = useState<{ status: 'draft' | 'published'; closeOnSuccess: boolean; changedCount: number } | null>(null);
+  const [pendingSave, setPendingSave] = useState<{ status: 'draft' | 'published'; closeOnSuccess: boolean; changedPages: ChangedPageWithRetainedMedia[] } | null>(null);
+  const [reviewPageIndex, setReviewPageIndex] = useState<number | null>(null);
   const [step, setStep] = useState(lesson ? 1 : 0);
   const [furthestStep, setFurthestStep] = useState(lesson ? 1 : 0);
   const [photos, setPhotos] = useState<LessonRecognitionImage[]>([]);
@@ -554,12 +555,20 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
 
   const save = async (status: 'draft' | 'published', closeOnSuccess = status === 'published') => {
     const saved = JSON.parse(savedSnapshot.current) as LessonDraftInput;
-    const changedCount = countChangedPagesWithRetainedMedia(saved, draft);
-    if (changedCount) {
-      setPendingSave({ status, closeOnSuccess, changedCount });
+    const changedPages = getChangedPagesWithRetainedMedia(saved, draft);
+    if (changedPages.length) {
+      setPendingSave({ status, closeOnSuccess, changedPages });
       return;
     }
     await saveNow(status, closeOnSuccess);
+  };
+
+  const inspectChangedPages = () => {
+    const firstPage = pendingSave?.changedPages[0]?.pageIndex;
+    if (firstPage === undefined) return;
+    setReviewPageIndex(firstPage);
+    goToStep(3);
+    setTimeout(() => document.getElementById(`storyboard-page-${firstPage}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 180);
   };
 
   const setAccuracyTargets = (value: string) => {
@@ -655,7 +664,7 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
             <div className="pinyin-token-grid">{page.pinyin.map((token, tokenIndex) => <div className={`pinyin-token${token.needsReview ? ' needs-review' : ''}`} key={tokenIndex}>
               <Input value={token.pinyin} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的拼音`} onChange={event => updateToken(pageIndex, tokenIndex, { pinyin: event.target.value })} onBlur={event => updateToken(pageIndex, tokenIndex, { pinyin: normalizePinyin(event.target.value), needsReview: !!token.text && !/[，。！？、；：,.!?;:\s]/u.test(token.text) && !event.target.value.trim() })} />
               <Input value={token.text} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的文字`} maxLength={1} placeholder="字" onChange={event => { if (event.target.value || !token.text) updateToken(pageIndex, tokenIndex, { text: event.target.value }); }} />
-              <button type="button" className="pinyin-token-delete" aria-label={`删除第${pageIndex + 1}段第${tokenIndex + 1}格的文字和拼音`} title="删除文字和拼音" onClick={() => setPendingTokenRemoval({ pageIndex, tokenIndex, text: token.text })}><X size={12} aria-hidden="true" /></button>
+              <button type="button" className="pinyin-token-delete" aria-label={`删除第${pageIndex + 1}段第${tokenIndex + 1}格的文字和拼音`} onClick={() => setPendingTokenRemoval({ pageIndex, tokenIndex, text: token.text })}><X size={13} aria-hidden="true" /></button>
             </div>)}<button type="button" className="pinyin-add-token" onClick={() => addToken(pageIndex)}><Plus size={15} />添加字</button></div>
           </article>)}</div>
         </section>
@@ -684,7 +693,7 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
       {!!draft.fullText && step === 3 && <section className="lesson-editor-card storyboard-editor">
           <div className="storyboard-heading"><div><span className="lesson-section-index">STEP 04 / 画面与声音</span><h3>为每一段准备画面和朗读</h3><p>生成插画时同步生成示范朗读，老师可试听后重录自己的版本。</p></div><div className="illustration-progress"><span>插画 <strong>{completedIllustrations} / {draft.pages.length}</strong> · 朗读 <strong>{completedAudio} / {draft.pages.length}</strong></span><div role="progressbar" aria-valuenow={completedIllustrations} aria-valuemin={0} aria-valuemax={draft.pages.length} aria-label="插画完成进度"><i style={{ width: `${draft.pages.length ? completedIllustrations / draft.pages.length * 100 : 0}%` }} /></div></div></div>
           <div className="demo-audio-full"><div><strong><AudioLines size={19} />整篇示范朗读</strong><span>学生在课文页听到的完整示范读音</span></div>{draft.fullDemoUrl && <audio controls preload="none" src={draft.fullDemoPreviewUrl || draft.fullDemoUrl} aria-label="整篇示范朗读" />}{!draft.fullDemoUrl && <span className="demo-audio-pending">生成画面时自动准备</span>}<div className="demo-audio-actions"><Button size="sm" variant="outline" disabled={audioGenerating.has(-1) || recordingTarget !== null} onClick={() => void generateAudio(-1)}>{audioGenerating.has(-1) ? <LoaderCircle className="spin" /> : <Sparkles />}{draft.fullDemoUrl ? '重新生成' : '生成朗读'}</Button><Button size="sm" variant="outline" disabled={audioGenerating.has(-1) || (recordingTarget !== null && recordingTarget !== -1)} onClick={() => void recordAudio(-1)}>{recordingTarget === -1 ? <Square /> : <Mic />}{recordingTarget === -1 ? '结束录音' : draft.fullDemoUrl ? '重录' : '自己录'}</Button></div>{audioErrors[-1] && <small role="alert">{audioErrors[-1]}</small>}</div>
-          <div className="storyboard-list">{draft.pages.map((page, index) => <article key={`scene-${page.id || index}`}>
+          <div className="storyboard-list">{draft.pages.map((page, index) => <article id={`storyboard-page-${index}`} className={reviewPageIndex === index ? 'needs-media-review' : undefined} key={`scene-${page.id || index}`}>
             <div className="storyboard-card-head"><strong>第 {index + 1} 段</strong><button type="button" disabled={draft.pages.length === 1} onClick={() => { setDraft(current => draftWithPages(current, reindexPages(current.pages.filter((_, pageIndex) => pageIndex !== index)))); setIllustrationErrors({}); }} aria-label={`删除第${index + 1}段`} title="删除这一段"><Trash2 size={16} />删除</button></div>
             <label className="storyboard-original">原文内容 <span>（可编辑）</span><Textarea value={page.text} placeholder="输入这一段的课文原文" onChange={event => updatePage(index, { text: event.target.value })} /><small>{page.text.length} / 500</small></label>
             <div className="storyboard-scene"><label>画面描述 <span>（可编辑）</span><Textarea value={page.scenePrompt} placeholder="描述要画出的角色、动作和场景" onChange={event => updatePage(index, { scenePrompt: event.target.value })} /><small>{page.scenePrompt.length} / 200</small></label><div className="storyboard-style"><span>参考风格</span><div role="group" aria-label={`第${index + 1}段插画风格`}>{ILLUSTRATION_STYLES.map(style => <button key={style.value} type="button" className={(page.illustrationStyle || 'watercolor') === style.value ? 'selected' : ''} aria-pressed={(page.illustrationStyle || 'watercolor') === style.value} onClick={() => updatePage(index, { illustrationStyle: style.value })}>{style.label}</button>)}</div></div></div>
@@ -704,7 +713,7 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
       <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>删除{pendingTokenRemoval?.text ? `“${pendingTokenRemoval.text}”` : '这个字格'}和拼音？</AlertDialogTitle><AlertDialogDescription>这格的文字和拼音会一并删除，已有插画和示范读音会保留。保存后才会应用到课文。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>取消</AlertDialogCancel><AlertDialogAction onClick={() => { if (pendingTokenRemoval) removeToken(pendingTokenRemoval.pageIndex, pendingTokenRemoval.tokenIndex); setPendingTokenRemoval(null); }}>确认删除</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
     <AlertDialog open={pendingSave !== null} onOpenChange={open => { if (!open) setPendingSave(null); }}>
-      <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>课文内容已调整，检查插画和示范读音？</AlertDialogTitle><AlertDialogDescription>有 {pendingSave?.changedCount} 段文字或拼音与上次保存时不同，且已有插画或示范读音。现有素材会保留，可能与新内容不一致。可以先去分镜插画页重新生成，也可以保留原素材继续保存。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel onClick={() => goToStep(3)}>去检查并重新生成</AlertDialogCancel><AlertDialogAction onClick={() => { if (pendingSave) void saveNow(pendingSave.status, pendingSave.closeOnSuccess); setPendingSave(null); }}>保留原素材，继续保存</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+      <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>这些段落的内容已调整</AlertDialogTitle><AlertDialogDescription>以下段落已有插画或示范读音，修改后可能需要重新生成：</AlertDialogDescription></AlertDialogHeader><ul className="lesson-media-review-list">{pendingSave?.changedPages.map(({ pageIndex, textChanged, pinyinChanged }) => <li key={pageIndex}>第 {pageIndex + 1} 段：{textChanged && pinyinChanged ? '文字和拼音' : textChanged ? '文字' : '拼音'}已变化</li>)}</ul><p className="lesson-media-review-note">现有素材会保留。可以去对应分镜检查，也可以直接保存。</p><AlertDialogFooter><AlertDialogCancel onClick={inspectChangedPages}>去检查并重新生成</AlertDialogCancel><AlertDialogAction onClick={() => { if (pendingSave) void saveNow(pendingSave.status, pendingSave.closeOnSuccess); setPendingSave(null); }}>保留原素材，继续保存</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
   </div></div>;
 }

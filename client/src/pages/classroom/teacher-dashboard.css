@@ -398,7 +398,10 @@
 .lesson-content-section h3 { margin-bottom: 12px; }
 .lesson-copy-block { padding: 12px; border: 1px solid #e4dfd0; border-radius: 14px; background: white; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 16px; align-items: start; }
 .lesson-copy-block > img { width: 100%; aspect-ratio: 4 / 3; border-radius: 11px; object-fit: cover; }
-.lesson-full-text { margin: 0; color: var(--teacher-ink)!important; font-size: 15px; line-height: 2; white-space: pre-wrap; }
+.lesson-full-text { margin: 0; color: var(--teacher-ink)!important; font-size: 17px; }
+.lesson-ruby-text { margin: 12px 0; color: var(--teacher-ink); font: 500 17px/3 "Noto Serif SC", "Songti SC", serif; white-space: pre-wrap; overflow-wrap: anywhere; }
+.lesson-ruby-text ruby { ruby-position: over; }
+.lesson-ruby-text rt { color: #9a7650; font: 500 .58em/1.3 "LXGW WenKai", "Kaiti SC", sans-serif; white-space: nowrap; }
 .lesson-demo-audio { margin-top: 10px; padding: 12px; border-radius: 12px; background: #f0f3eb; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; color: var(--teacher-green); font-size: 12px; font-weight: 800; }
 .lesson-demo-audio audio,
 .lesson-material-page audio { width: 100%; height: 36px; }
@@ -408,8 +411,7 @@
 .lesson-image-empty { width: 100%; aspect-ratio: 4 / 3; border-radius: 11px; object-fit: cover; background: #eeece3; }
 .lesson-image-empty { display: grid; place-items: center; color: #999f98; font-size: 11px; }
 .lesson-material-page > div > small { color: #8d948d; font-size: 10px; font-weight: 800; }
-.lesson-material-page > div > p:not(.lesson-page-pinyin) { margin: 9px 0; color: var(--teacher-ink); font-size: 14px; line-height: 1.8; }
-.lesson-page-pinyin { margin: 12px 0 4px; color: #9a7650; font: 11px/1.7 Georgia, serif; }
+.lesson-material-page .lesson-ruby-text { font-size: 16px; line-height: 2.8; }
 .lesson-rubric-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 .lesson-rubric-grid article { padding: 14px; border-radius: 14px; background: #f0f3eb; }
 .lesson-rubric-grid strong { color: var(--teacher-green); }

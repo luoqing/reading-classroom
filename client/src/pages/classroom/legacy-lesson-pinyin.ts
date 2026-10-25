@@ -56,6 +56,30 @@ export function restoreLegacyPagePinyin(lesson: Pick<LessonView, 'fullText' | 'p
   });
 }
 
+export function restoreFullTextPinyin(lesson: Pick<LessonView, 'fullText' | 'pinyin' | 'pages'>): PinyinToken[] {
+  const tokens = [...lesson.fullText].map(text => ({ text, pinyin: '' }));
+  let paragraphStart = 0;
+  lesson.fullText.split(/\n\s*\n/u).forEach((paragraph, index) => {
+    const start = lesson.fullText.indexOf(paragraph, paragraphStart);
+    if (start < 0) return;
+    paragraphStart = start + paragraph.length;
+    expandPinyin(paragraph, lesson.pinyin.paragraphs[index]?.trim().split(/\s+/u) || [])
+      ?.forEach((token, offset) => { tokens[start + offset].pinyin = token.pinyin; });
+  });
+  const restoredPages = restoreLegacyPagePinyin(lesson);
+  let searchFrom = 0;
+  lesson.pages.forEach((page, pageIndex) => {
+    if (page.pageType === 'cover' || !page.text) return;
+    const start = lesson.fullText.indexOf(page.text, searchFrom);
+    if (start < 0) return;
+    searchFrom = start + page.text.length;
+    restoredPages[pageIndex].forEach((token, index) => {
+      if (tokens[start + index]?.text === token.text) tokens[start + index].pinyin = token.pinyin;
+    });
+  });
+  return tokens;
+}
+
 export function paragraphsFromPagePinyin(fullText: string, pages: LessonDraftPageInput[]): string[] {
   const tokensByPosition = new Map<number, PinyinToken>();
   let searchFrom = 0;

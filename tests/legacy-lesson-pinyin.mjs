@@ -15,7 +15,7 @@ function loadTypeScript(path) {
   return module.exports;
 }
 
-const { restoreLegacyPagePinyin, paragraphsFromPagePinyin } = loadTypeScript('client/src/pages/classroom/legacy-lesson-pinyin.ts');
+const { restoreLegacyPagePinyin, restoreFullTextPinyin, paragraphsFromPagePinyin } = loadTypeScript('client/src/pages/classroom/legacy-lesson-pinyin.ts');
 const localLessons = [
   {
     title: '秋天',
@@ -60,6 +60,9 @@ for (const lesson of localLessons) {
     paragraphsFromPagePinyin(lesson.fullText, lesson.pages.map((page, index) => ({ ...page, pinyin: restored[index] }))),
     lesson.pinyin.paragraphs,
   );
+  const fullTextTokens = restoreFullTextPinyin(lesson);
+  assert.equal(fullTextTokens.map(token => token.text).join(''), lesson.fullText);
+  assert.equal(fullTextTokens.filter(token => /\p{Script=Han}/u.test(token.text) && !token.pinyin).length, 0);
 }
 
 const [autumn, house] = localLessons;

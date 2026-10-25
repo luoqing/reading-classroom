@@ -10,7 +10,7 @@ const compiled = ts.transpileModule(readFileSync(path, 'utf8'), {
 const module = new Module(path);
 module.filename = path;
 module._compile(compiled, path);
-const { countChangedPagesWithRetainedMedia: count } = module.exports;
+const { getChangedPagesWithRetainedMedia: changedPages } = module.exports;
 
 const page = {
   id: 'page-1', text: '秋天来了。', pinyin: [{ text: '秋', pinyin: 'qiū' }],
@@ -19,12 +19,13 @@ const page = {
 const saved = { pages: [page] };
 const current = change => ({ pages: [{ ...page, ...change }] });
 
-assert.equal(count(saved, current({})), 0);
-assert.equal(count(saved, current({ text: '秋天来啦。' })), 1);
-assert.equal(count(saved, current({ pinyin: [{ text: '秋', pinyin: 'qiú' }] })), 1);
-assert.equal(count(saved, current({ scenePrompt: '一片秋叶' })), 0);
-assert.equal(count(saved, current({ text: '秋天来啦。', illustrationUrl: 'image-2' })), 1);
-assert.equal(count(saved, current({ text: '秋天来啦。', illustrationUrl: 'image-2', demoAudioUrl: 'audio-2' })), 0);
-assert.equal(count({ pages: [{ ...page, illustrationUrl: null, demoAudioUrl: null }] }, current({ text: '秋天来啦。' })), 0);
-assert.equal(count(saved, { pages: [{ ...page, id: undefined, text: '秋天来啦。' }] }), 0);
+assert.deepEqual(changedPages(saved, current({})), []);
+assert.deepEqual(changedPages(saved, current({ text: '秋天来啦。' })), [{ pageIndex: 0, textChanged: true, pinyinChanged: false }]);
+assert.deepEqual(changedPages(saved, current({ pinyin: [{ text: '秋', pinyin: 'qiú' }] })), [{ pageIndex: 0, textChanged: false, pinyinChanged: true }]);
+assert.deepEqual(changedPages(saved, current({ text: '秋天来啦。', pinyin: [{ text: '秋', pinyin: 'qiú' }] })), [{ pageIndex: 0, textChanged: true, pinyinChanged: true }]);
+assert.deepEqual(changedPages(saved, current({ scenePrompt: '一片秋叶' })), []);
+assert.equal(changedPages(saved, current({ text: '秋天来啦。', illustrationUrl: 'image-2' })).length, 1);
+assert.deepEqual(changedPages(saved, current({ text: '秋天来啦。', illustrationUrl: 'image-2', demoAudioUrl: 'audio-2' })), []);
+assert.deepEqual(changedPages({ pages: [{ ...page, illustrationUrl: null, demoAudioUrl: null }] }, current({ text: '秋天来啦。' })), []);
+assert.deepEqual(changedPages(saved, { pages: [{ ...page, id: undefined, text: '秋天来啦。' }] }), []);
 console.log('Lesson media review conditions passed');

@@ -40,6 +40,8 @@ import {
 } from '../../api/classroom';
 import { logout } from '../../api/auth';
 import LessonEditor from './LessonEditor';
+import LessonRubyText from './LessonRubyText';
+import { restoreFullTextPinyin, restoreLegacyPagePinyin } from './legacy-lesson-pinyin';
 import TeacherWorkspaceSidebar, { type WorkspaceView } from './TeacherWorkspaceSidebar';
 import { Input } from '../../components/ui/input';
 import {
@@ -223,6 +225,10 @@ export default function TeacherDashboard({
   const [message, setMessage] = useState('');
   const [selectedLesson, setSelectedLesson] = useState<AdminLessonSummary | null>(null);
   const [editingLesson, setEditingLesson] = useState<AdminLessonSummary | null | undefined>(undefined);
+  const lessonReading = useMemo(() => selectedLesson ? {
+    fullText: restoreFullTextPinyin(selectedLesson),
+    pages: restoreLegacyPagePinyin(selectedLesson),
+  } : null, [selectedLesson]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -461,8 +467,8 @@ export default function TeacherDashboard({
     </aside></div>}
 
     {selectedLesson && <div className="student-drawer-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setSelectedLesson(null); }}><aside className="student-drawer lesson-drawer"><button className="drawer-close" onClick={() => setSelectedLesson(null)} aria-label="关闭课文数据"><X /></button><span className="teacher-kicker">课文数据</span><h2>{selectedLesson.title}</h2><p>{selectedLesson.gradeLabel || '小学语文'} · 第 {selectedLesson.revision} 版 · {selectedLesson.status === 'published' ? '已发布' : selectedLesson.status}</p><div className="lesson-detail-stats"><article><FileText /><small>正文与插画页</small><strong>{selectedLesson.pageCount}</strong></article><article><Headphones /><small>累计录音</small><strong>{selectedLesson.attemptCount}</strong></article><article><UsersRound /><small>练习学生</small><strong>{selectedLesson.completedStudentCount}</strong></article></div><p className="lesson-last-record">最近录音：{dateTimeText(selectedLesson.latestRecordedAt)}</p>
-      <section className="lesson-content-section"><h3>课文正文</h3><div className="lesson-copy-block">{selectedLesson.coverUrl && <img src={selectedLesson.coverUrl} alt={`${selectedLesson.title}封面`} />}<p className="lesson-full-text">{selectedLesson.fullText}</p></div>{selectedLesson.fullDemoUrl && <div className="lesson-demo-audio"><span>完整示范朗读</span><audio controls preload="none" src={selectedLesson.fullDemoUrl} /></div>}</section>
-      <section className="lesson-content-section"><h3>逐页课文与插画</h3><div className="lesson-page-list">{selectedLesson.pages.map(page => <article className="lesson-material-page" key={page.id}>{page.illustrationUrl ? <img src={page.illustrationUrl} alt={`${selectedLesson.title}${page.pageType === 'cover' ? '封面' : `第 ${page.pageNo} 页`}插画`} /> : <div className="lesson-image-empty">暂无插画</div>}<div><small>{page.pageType === 'cover' ? '封面' : `第 ${page.pageNo} 页`}</small>{page.pinyin.length > 0 && <p className="lesson-page-pinyin">{page.pinyin.map((token, index) => <span key={`${page.id}-${index}`}>{token.pinyin}</span>)}</p>}<p>{page.text || '本页没有正文'}</p>{page.demoAudioUrl && <audio controls preload="none" src={page.demoAudioUrl} />}</div></article>)}</div></section>
+      <section className="lesson-content-section"><h3>课文正文</h3><div className="lesson-copy-block">{selectedLesson.coverUrl && <img src={selectedLesson.coverUrl} alt={`${selectedLesson.title}封面`} />}<LessonRubyText tokens={lessonReading?.fullText || []} className="lesson-full-text" /></div>{selectedLesson.fullDemoUrl && <div className="lesson-demo-audio"><span>完整示范朗读</span><audio controls preload="none" src={selectedLesson.fullDemoUrl} /></div>}</section>
+      <section className="lesson-content-section"><h3>逐页课文与插画</h3><div className="lesson-page-list">{selectedLesson.pages.map((page, index) => <article className="lesson-material-page" key={page.id}>{page.illustrationUrl ? <img src={page.illustrationUrl} alt={`${selectedLesson.title}${page.pageType === 'cover' ? '封面' : `第 ${page.pageNo} 页`}插画`} /> : <div className="lesson-image-empty">暂无插画</div>}<div><small>{page.pageType === 'cover' ? '封面' : `第 ${page.pageNo} 页`}</small><LessonRubyText tokens={lessonReading?.pages[index] || []} />{page.demoAudioUrl && <audio controls preload="none" src={page.demoAudioUrl} />}</div></article>)}</div></section>
       <section className="lesson-content-section"><h3>评判规则</h3><div className="lesson-rubric-grid"><article><strong>读流利</strong><p>{selectedLesson.rubric.natural?.description || '自然段之间有合适的停顿，句子读得完整、连贯。'}</p></article><article><strong>读准确</strong><p>{lessonCorrectnessText(selectedLesson)}</p></article></div>{selectedLesson.rubric.thresholds && <p className="lesson-thresholds">普通字音问题达到 {selectedLesson.rubric.thresholds.normalPhoneLevel ?? 3} 级提示，重点字达到 {selectedLesson.rubric.thresholds.targetPhoneLevel ?? 3} 级复核。</p>}</section>
     </aside></div>}
 
