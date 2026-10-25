@@ -650,3 +650,13 @@ test('spoken teacher comment covers accuracy, naturalness, and delivery in order
   ]);
   assert.ok(speechKeys.every(key => teacherSpeechClips[key]?.endsWith('.mp3')));
 });
+
+test('generated lesson illustrations keep a stable storage locator and use a signed preview', () => {
+  const service = fs.readFileSync(new URL('../server/modules/lessons/lessons.service.ts', import.meta.url), 'utf8');
+  const editor = fs.readFileSync(new URL('../client/src/pages/classroom/LessonEditor.tsx', import.meta.url), 'utf8');
+
+  assert.match(service, /illustrationUrl: storageUrl,\s*previewUrl: previewUrl \|\| storageUrl/u);
+  assert.match(service, /illustrationStorageUrl: page\.illustrationUrl/u);
+  assert.match(editor, /illustrationUrl: page\.illustrationStorageUrl \|\| page\.illustrationUrl/u);
+  assert.match(editor, /page\.illustrationPreviewUrl \|\| page\.illustrationUrl/u);
+});

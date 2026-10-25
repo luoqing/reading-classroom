@@ -50,6 +50,7 @@ import {
   SelectValue,
 } from '../../components/ui/select';
 import './teacher-dashboard.css';
+import './lesson-editor.css';
 
 type DashboardView = 'overview' | 'students' | 'lessons' | 'accounts';
 type StudentFilter = 'all' | 'help' | 'unpracticed';

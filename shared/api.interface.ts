@@ -39,6 +39,7 @@ export interface LessonPageView {
   pinyin: PinyinToken[];
   scenePrompt: string;
   illustrationUrl: string | null;
+  illustrationStorageUrl?: string | null;
   demoAudioUrl: string | null;
   videoStartMs: number | null;
   videoEndMs: number | null;
@@ -95,6 +96,7 @@ export interface LessonDraftPageInput {
   pinyin: PinyinToken[];
   scenePrompt: string;
   illustrationUrl?: string | null;
+  illustrationPreviewUrl?: string | null;
 }
 
 export interface LessonDraftInput {
@@ -132,6 +134,7 @@ export interface IllustrationGenerateRequest {
 
 export interface IllustrationGenerateResult {
   illustrationUrl: string;
+  previewUrl: string;
 }
 
 export interface LessonView {

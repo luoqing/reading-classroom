@@ -239,8 +239,11 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
       contentType: imageResponse.headers.get('content-type') || 'image/png',
       upsert: false,
     });
+    const storageUrl = `/runtime/api/v1/storage/object/${uploaded.bucketID}/${uploaded.filePath}`;
+    const previewUrl = await signedStorageObjectUrl(this.files, storageUrl);
     return {
-      illustrationUrl: `/runtime/api/v1/storage/object/${uploaded.bucketID}/${uploaded.filePath}`,
+      illustrationUrl: storageUrl,
+      previewUrl: previewUrl || storageUrl,
     };
   }
 
@@ -330,6 +333,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
           text: page.textContent,
           pinyin: storedPinyin.tokens,
           scenePrompt: storedPinyin.scenePrompt,
+          illustrationStorageUrl: page.illustrationUrl,
           illustrationUrl: await signedStorageObjectUrl(this.files, page.illustrationUrl),
           demoAudioUrl: await signedStorageObjectUrl(this.files, page.demoAudioUrl),
           videoStartMs: page.videoStartMs,
