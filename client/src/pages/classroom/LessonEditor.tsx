@@ -37,6 +37,7 @@ import {
   uploadLessonDemoRecording,
 } from '../../api/classroom';
 import { Button } from '../../components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../components/ui/alert-dialog';
 import { Image } from '../../components/ui/image';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
@@ -46,6 +47,7 @@ interface LessonEditorProps {
   lesson?: AdminLessonSummary | null;
   onClose: () => void;
   onSaved: () => Promise<void> | void;
+  onNavigate: (destination: 'lessons' | 'resources' | 'students' | 'overview' | 'new') => void;
 }
 
 const EMPTY_DRAFT: LessonDraftInput = {
@@ -234,8 +236,10 @@ async function fileToImage(file: File): Promise<LessonRecognitionImage> {
   });
 }
 
-export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorProps) {
+export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: LessonEditorProps) {
   const [draft, setDraft] = useState<LessonDraftInput>(() => lessonToDraft(lesson));
+  const savedSnapshot = useRef(JSON.stringify(lessonToDraft(lesson)));
+  const [pendingDestination, setPendingDestination] = useState<Parameters<LessonEditorProps['onNavigate']>[0] | 'close' | null>(null);
   const [step, setStep] = useState(lesson ? 1 : 0);
   const [furthestStep, setFurthestStep] = useState(lesson ? 1 : 0);
   const [photos, setPhotos] = useState<LessonRecognitionImage[]>([]);
@@ -258,6 +262,21 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
   const completedIllustrations = draft.pages.filter(page => page.illustrationUrl).length;
   const completedAudio = draft.pages.filter(page => page.demoAudioUrl).length;
   const steps = ['上传照片', '校对课文', '教学重点', '分镜插画', '确认发布'];
+  const leaveEditor = (destination?: Parameters<LessonEditorProps['onNavigate']>[0]) => {
+    const hasUnsavedChanges = JSON.stringify(draft) !== savedSnapshot.current
+      || (photos.length > 0 && !draft.fullText);
+    if (hasUnsavedChanges) {
+      setPendingDestination(destination || 'close');
+      return;
+    }
+    if (destination) onNavigate(destination);
+    else onClose();
+  };
+  const confirmLeave = () => {
+    if (pendingDestination && pendingDestination !== 'close') onNavigate(pendingDestination);
+    else onClose();
+    setPendingDestination(null);
+  };
   const goToStep = (next: number) => {
     setStep(next);
     setFurthestStep(current => Math.max(current, next));
@@ -526,6 +545,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
     setMessage(status === 'published' ? '正在发布课文…' : '正在保存草稿…');
     try {
       const saved = await saveLesson({ ...draft, status });
+      savedSnapshot.current = JSON.stringify({ ...draft, id: saved.id, status });
       setDraft(current => ({ ...current, id: saved.id, status }));
       setMessage(status === 'published' ? '课文已发布，学生端可以看到' : '草稿已保存');
       await onSaved();
@@ -595,13 +615,13 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
   return <div className="lesson-editor-backdrop"><div className="lesson-editor-shell">
     <aside className="lesson-editor-sidebar" aria-label="教师工作台">
       <div className="lesson-editor-brand"><ReadingCottageMark /><strong>朗读小屋</strong><span>让每一篇课文，<br />都读进孩子的心里</span></div>
-      <nav aria-label="工作台导航"><span><FileText />我的课文</span><span className="current"><PencilLine />录入新课文</span><span><BookOpen />我的资源</span><span><Users />班级管理</span><span><ChartNoAxesCombined />学情观察</span></nav>
+      <nav aria-label="工作台导航"><button type="button" onClick={() => leaveEditor('lessons')}><FileText />我的课文</button><button type="button" className="current" aria-current="page" onClick={() => { if (lesson) leaveEditor('new'); else document.querySelector('.lesson-editor-backdrop')?.scrollTo({ top: 0, behavior: 'smooth' }); }}><PencilLine />录入新课文</button><button type="button" onClick={() => leaveEditor('resources')}><BookOpen />我的资源</button><button type="button" onClick={() => leaveEditor('students')}><Users />班级管理</button><button type="button" onClick={() => leaveEditor('overview')}><ChartNoAxesCombined />学情观察</button></nav>
       <div className="lesson-editor-sidebar-art"><p>在文字的阳光下，<br />看见更大的世界。</p></div>
     </aside>
     <section className="lesson-editor" aria-label="AI 课文录入">
       <header className="lesson-editor-header">
         <div><span className="teacher-kicker">朗读小屋 · 课文工作台</span><h2>{lesson ? `编辑《${lesson.title}》` : '录入新课文'}</h2><p>每一步只完成一件事，随时可以保存当前进度。</p></div>
-        <button className="drawer-close" onClick={onClose} aria-label="关闭课文编辑"><X /></button>
+        <button className="drawer-close" onClick={() => leaveEditor()} aria-label="关闭课文编辑"><X /></button>
       </header>
 
       <nav className="lesson-editor-steps" aria-label="录入流程">{steps.map((name, index) => <button key={name} type="button" className={index === step ? 'active' : index < step ? 'done' : ''} aria-current={index === step ? 'step' : undefined} disabled={index > furthestStep || (index === 0 && !!lesson)} onClick={() => goToStep(index)}><b>{index < step ? <Check size={16} /> : index + 1}</b><span><strong>{name}</strong><small>{['拍照或上传课本页面', '识别并校对文字内容', '设置本课的教学目标', '为每一段准备画面', '预览并发布课文'][index]}</small></span></button>)}</nav>
@@ -675,5 +695,8 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
 
       {!!draft.fullText && <footer className="lesson-editor-footer"><Button variant="outline" onClick={() => goToStep(step - 1)} disabled={step === 0 || (step === 1 && !!lesson)}>返回上一步</Button><span className="lesson-footer-spacer" /><Button variant="outline" onClick={() => void save(draft.status === 'published' ? 'published' : 'draft', false)} disabled={saving}><Save />{draft.status === 'published' ? '保存修改' : '保存草稿'}</Button>{step < 4 ? <Button onClick={nextStep}><Check />下一步：{steps[step + 1]}</Button> : <Button onClick={() => void save('published')} disabled={saving || !draft.pages.length}><Check />确认发布课文</Button>}</footer>}
     </section>
+    <AlertDialog open={pendingDestination !== null} onOpenChange={open => { if (!open) setPendingDestination(null); }}>
+      <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>还有未保存的修改</AlertDialogTitle><AlertDialogDescription>离开后，这次修改将不会保留。可以先返回保存草稿。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>继续编辑</AlertDialogCancel><AlertDialogAction onClick={confirmLeave}>不保存，离开</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+    </AlertDialog>
   </div></div>;
 }

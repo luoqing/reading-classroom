@@ -53,7 +53,7 @@ import {
 import './teacher-dashboard.css';
 import './lesson-editor.css';
 
-type DashboardView = 'overview' | 'students' | 'lessons' | 'accounts';
+type DashboardView = 'overview' | 'students' | 'lessons' | 'resources' | 'accounts';
 type StudentFilter = 'all' | 'help' | 'unpracticed';
 
 const DASHBOARD_RANGES: Array<{ value: AdminDashboardRange; label: string }> = [
@@ -351,6 +351,7 @@ export default function TeacherDashboard({
     { key: 'overview', label: '学情总览', icon: BarChart3 },
     { key: 'students', label: '学生档案', icon: UsersRound },
     { key: 'lessons', label: '课文管理', icon: BookOpen },
+    { key: 'resources', label: '我的资源', icon: FileText },
     { key: 'accounts', label: '账号管理', icon: KeyRound },
   ];
 
@@ -358,6 +359,7 @@ export default function TeacherDashboard({
     overview: '学情总览',
     students: '学生档案',
     lessons: '课文管理',
+    resources: '我的资源',
     accounts: '账号管理',
   };
 
@@ -463,6 +465,12 @@ export default function TeacherDashboard({
         <div className="lesson-admin-grid">{data.lessons.map(item => <article key={item.id} className="lesson-admin-card"><div className="lesson-admin-top"><span><BookOpen /></span><em>{item.status === 'published' ? '已发布' : '草稿'}</em></div><h3>{item.title}</h3><p>{item.gradeLabel || '小学语文'} · 第 {item.revision} 版</p><dl><div><dt>插画/正文页</dt><dd>{item.pageCount}</dd></div><div><dt>累计录音</dt><dd>{item.attemptCount}</dd></div><div><dt>练习学生</dt><dd>{item.completedStudentCount}</dd></div></dl><small>最近录音：{dateTimeText(item.latestRecordedAt)}</small><div className="lesson-card-actions"><button onClick={() => setSelectedLesson(item)}>查看课文数据<ChevronRight size={16} /></button><button onClick={() => setEditingLesson(item)}>编辑课文</button></div></article>)}</div>
       </section>}
 
+      {view === 'resources' && data && <section className="teacher-section-page">
+        <div className="section-page-heading"><div><span className="teacher-kicker">课文素材</span><h2>我的资源</h2><p>集中查看已录入课文的插画、正文和示范朗读。</p></div><button className="teacher-primary" onClick={() => { setView('lessons'); setEditingLesson(null); }}><Sparkles size={17} />录入新课文</button></div>
+        <div className="lesson-admin-grid">{data.lessons.map(item => <article key={item.id} className="lesson-admin-card"><div className="lesson-admin-top"><span><BookOpen /></span><em>{item.status === 'published' ? '已发布' : '草稿'}</em></div><h3>{item.title}</h3><p>{item.gradeLabel || '小学语文'} · 第 {item.revision} 版</p><dl><div><dt>分镜</dt><dd>{item.pageCount}</dd></div><div><dt>插画</dt><dd>{item.pages.filter(page => page.illustrationUrl).length}</dd></div><div><dt>示范朗读</dt><dd>{item.pages.filter(page => page.demoAudioUrl).length}</dd></div></dl><div className="lesson-card-actions"><button onClick={() => setSelectedLesson(item)}>查看资源<ChevronRight size={16} /></button><button onClick={() => setEditingLesson(item)}>编辑课文</button></div></article>)}</div>
+        {!data.lessons.length && <div className="teacher-empty"><BookOpen size={34} /><strong>还没有课文资源</strong><span>先录入一篇课文，插画和示范朗读会显示在这里。</span></div>}
+      </section>}
+
       {view === 'accounts' && data && <section className="teacher-section-page">
         <div className="section-page-heading"><div><span className="teacher-kicker">学生登录与权限</span><h2>{titleByView[view]}</h2><p>创建学生账号、重置初始密码并管理账号状态。</p></div><button className="teacher-primary" onClick={() => setShowCreate(true)}><Plus size={17} />批量建号</button></div>
         <div className="account-board"><div className="account-table-head"><span>学生</span><span>登录账号</span><span>最近登录</span><span>状态</span><span>操作</span></div>{visible.map(student => <div className="account-row" key={student.id}><StudentIdentity student={student} /><code>{student.username}</code><span>{dateTimeText(student.lastLoginAt)}</span><span className={`account-status ${student.status}`}>{student.status === 'active' ? (student.mustChangePassword ? '待改初始密码' : '正常') : '已停用'}</span><div><button onClick={() => setResetTarget(student)}><KeyRound size={14} />重置密码</button><button onClick={() => void changeStudentStatus(student)}>{student.status === 'active' ? '停用' : '恢复'}</button></div></div>)}</div>
@@ -489,6 +497,10 @@ export default function TeacherDashboard({
     {resetTarget && <div className="student-drawer-backdrop"><section className="create-dialog"><button className="drawer-close" onClick={() => setResetTarget(null)} aria-label="关闭密码重置"><X /></button><span className="teacher-kicker">密码重置</span><h2>重置 {resetTarget.displayName} 的密码</h2><p>老师可以直接设置新密码；留空则由系统随机生成。学生登录后会看到修改密码提醒。</p><label className="create-password-field">新密码<Input type="text" value={resetValue} placeholder="至少 8 位；留空随机生成" onChange={event => setResetValue(event.target.value)} /></label><button className="teacher-primary" onClick={() => void resetPassword(resetTarget, resetValue || undefined)}>确认重置</button></section></div>}
 
     {credential && <div className="student-drawer-backdrop"><section className="create-dialog credentials"><button className="drawer-close" onClick={() => setCredential(null)} aria-label="关闭账号结果"><X /></button><span className="teacher-kicker">仅显示这一次</span><h2>账号已准备好</h2><p>请现在复制并安全发给学生。系统不保存明文密码。</p>{credential.map(item => <div className="credential-row" key={item.account.id}><b>{item.account.displayName}</b><code>{item.account.username}</code><code>{item.initialPassword}</code></div>)}</section></div>}
-    {editingLesson !== undefined && <LessonEditor lesson={editingLesson} onClose={() => setEditingLesson(undefined)} onSaved={refresh} />}
+    {editingLesson !== undefined && <LessonEditor key={editingLesson?.id || 'new'} lesson={editingLesson} onClose={() => setEditingLesson(undefined)} onSaved={refresh} onNavigate={destination => {
+      setSelectedLesson(null);
+      if (destination === 'new') setEditingLesson(null);
+      else { setView(destination); setEditingLesson(undefined); }
+    }} />}
   </div>;
 }
