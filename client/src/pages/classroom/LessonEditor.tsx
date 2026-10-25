@@ -42,6 +42,7 @@ import { Image } from '../../components/ui/image';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
 import ReadingCottageMark from './ReadingCottageMark';
+import { paragraphsFromPagePinyin, restoreLegacyPagePinyin } from './legacy-lesson-pinyin';
 
 interface LessonEditorProps {
   lesson?: AdminLessonSummary | null;
@@ -72,6 +73,7 @@ const EMPTY_DRAFT: LessonDraftInput = {
 
 function lessonToDraft(lesson?: AdminLessonSummary | null): LessonDraftInput {
   if (!lesson) return structuredClone(EMPTY_DRAFT);
+  const restoredPinyin = restoreLegacyPagePinyin(lesson);
   const delivery = lesson.rubric.delivery || {};
   const legacyTargets = delivery.yiTargets || [];
   const pronunciationTargets = delivery.pronunciationTargets?.length
@@ -122,7 +124,7 @@ function lessonToDraft(lesson?: AdminLessonSummary | null): LessonDraftInput {
       pageNo: index + 1,
       pageType: page.pageType === 'cover' ? 'cover' : 'body',
       text: page.text,
-      pinyin: alignTokens(page.pinyin, page.text),
+      pinyin: restoredPinyin[index],
       scenePrompt: page.scenePrompt || `表现“${page.text}”的儿童水彩绘本插画`,
       illustrationStyle: page.illustrationStyle || 'watercolor',
       illustrationUrl: page.illustrationStorageUrl || page.illustrationUrl,
@@ -203,7 +205,7 @@ function draftWithPages(current: LessonDraftInput, pages: LessonDraftPageInput[]
     ...current,
     pages,
     fullText,
-    pinyin: { paragraphs: pages.map(page => page.pinyin.map(token => token.pinyin || token.text).join(' ')) },
+    pinyin: { paragraphs: paragraphsFromPagePinyin(fullText, pages) },
   };
 }
 const ILLUSTRATION_STYLES: Array<{ value: IllustrationStyle; label: string }> = [
@@ -370,7 +372,7 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
       return patch.text !== undefined ? { ...draftWithPages(current, pages, pageIndex), fullDemoUrl: null, fullDemoPreviewUrl: null } : {
         ...current,
         pages,
-        pinyin: { paragraphs: pages.map(page => page.pinyin.map(token => token.pinyin || token.text).join(' ')) },
+        pinyin: { paragraphs: paragraphsFromPagePinyin(current.fullText, pages) },
       };
     });
   };
