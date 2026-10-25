@@ -114,7 +114,7 @@ function lessonToDraft(lesson?: AdminLessonSummary | null): LessonDraftInput {
       pageNo: index + 1,
       pageType: page.pageType === 'cover' ? 'cover' : 'body',
       text: page.text,
-      pinyin: page.pinyin,
+      pinyin: alignTokens(page.pinyin, page.text),
       scenePrompt: page.scenePrompt || `表现“${page.text}”的儿童水彩绘本插画`,
       illustrationStyle: page.illustrationStyle || 'watercolor',
       illustrationUrl: page.illustrationStorageUrl || page.illustrationUrl,
@@ -156,6 +156,46 @@ const reindexPages = (pages: LessonDraftPageInput[]) => pages.map((page, index) 
   ...page,
   pageNo: index + 1,
 }));
+
+function alignTokens(tokens: PinyinToken[], text: string): PinyinToken[] {
+  const characters = [...text];
+  let prefix = 0;
+  while (prefix < tokens.length && prefix < characters.length && tokens[prefix].text === characters[prefix]) prefix += 1;
+  let suffix = 0;
+  while (suffix < tokens.length - prefix && suffix < characters.length - prefix
+    && tokens[tokens.length - suffix - 1].text === characters[characters.length - suffix - 1]) suffix += 1;
+  return [
+    ...tokens.slice(0, prefix),
+    ...characters.slice(prefix, characters.length - suffix).map(char => ({
+      text: char,
+      pinyin: '',
+      needsReview: !/[，。！？、；：,.!?;:\s]/u.test(char),
+    })),
+    ...tokens.slice(tokens.length - suffix),
+  ];
+}
+
+function draftWithPages(current: LessonDraftInput, pages: LessonDraftPageInput[], editedPageIndex?: number): LessonDraftInput {
+  let fullText = pages.map(page => page.text).join('\n');
+  if (editedPageIndex !== undefined && current.pages[editedPageIndex]?.text) {
+    let searchFrom = 0;
+    for (const page of current.pages.slice(0, editedPageIndex)) {
+      const position = current.fullText.indexOf(page.text, searchFrom);
+      if (position < 0) break;
+      searchFrom = position + page.text.length;
+    }
+    const oldText = current.pages[editedPageIndex].text;
+    const position = current.fullText.indexOf(oldText, searchFrom);
+    if (position >= 0) fullText = current.fullText.slice(0, position) + pages[editedPageIndex].text
+      + current.fullText.slice(position + oldText.length);
+  }
+  return {
+    ...current,
+    pages,
+    fullText,
+    pinyin: { paragraphs: pages.map(page => page.pinyin.map(token => token.pinyin || token.text).join(' ')) },
+  };
+}
 const ILLUSTRATION_STYLES: Array<{ value: IllustrationStyle; label: string }> = [
   { value: 'watercolor', label: '水彩插画' },
   { value: 'storybook', label: '儿童绘本' },
@@ -220,16 +260,21 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
   };
 
   const updatePage = (index: number, patch: Partial<LessonDraftPageInput>) => {
-    setDraft(current => ({
-      ...current,
-      pages: current.pages.map((page, pageIndex) => {
+    setDraft(current => {
+      const pages = current.pages.map((page, pageIndex) => {
         if (pageIndex !== index) return page;
         const contentChanged = (patch.text !== undefined && patch.text !== page.text)
           || (patch.scenePrompt !== undefined && patch.scenePrompt !== page.scenePrompt)
           || (patch.illustrationStyle !== undefined && patch.illustrationStyle !== page.illustrationStyle);
-        return { ...page, ...(contentChanged ? { illustrationUrl: null, illustrationPreviewUrl: null } : {}), ...patch };
-      }),
-    }));
+        return {
+          ...page,
+          ...(contentChanged ? { illustrationUrl: null, illustrationPreviewUrl: null } : {}),
+          ...patch,
+          ...(patch.text !== undefined ? { pinyin: alignTokens(page.pinyin, patch.text) } : {}),
+        };
+      });
+      return patch.text !== undefined ? draftWithPages(current, pages, index) : { ...current, pages };
+    });
     if (patch.text !== undefined || patch.scenePrompt !== undefined || patch.illustrationStyle !== undefined) {
       setIllustrationErrors(current => ({ ...current, [index]: '' }));
     }
@@ -262,7 +307,10 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
     try {
       const result = await recognizeLesson({ images: photos });
       const { reviewNotes: notes, ...recognizedDraft } = result;
-      setDraft(recognizedDraft);
+      setDraft({
+        ...recognizedDraft,
+        pages: recognizedDraft.pages.map(page => ({ ...page, pinyin: alignTokens(page.pinyin, page.text) })),
+      });
       setReviewNotes(notes);
       goToStep(1);
       setMessage('识别完成。请先校对正文和橙色拼音。');
@@ -274,11 +322,40 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
   };
 
   const updateToken = (pageIndex: number, tokenIndex: number, patch: Partial<PinyinToken>) => {
-    const tokens = draft.pages[pageIndex].pinyin.map((token, index) => (
-      index === tokenIndex ? { ...token, ...patch } : token
-    ));
-    updatePage(pageIndex, { pinyin: tokens });
+    setDraft(current => {
+      const pages = current.pages.map((page, index) => {
+        if (index !== pageIndex) return page;
+        const tokens = page.pinyin.map((token, index) => {
+          if (index !== tokenIndex) return token;
+          if (patch.text === undefined || patch.text === token.text) return { ...token, ...patch };
+          return { ...token, ...patch, pinyin: '', needsReview: !!patch.text && !/[，。！？、；：,.!?;:\s]/u.test(patch.text) };
+        });
+        const text = tokens.map(token => token.text).join('');
+        return { ...page, text, pinyin: tokens, ...(text !== page.text ? { illustrationUrl: null, illustrationPreviewUrl: null } : {}) };
+      });
+      return patch.text !== undefined ? draftWithPages(current, pages, pageIndex) : {
+        ...current,
+        pages,
+        pinyin: { paragraphs: pages.map(page => page.pinyin.map(token => token.pinyin || token.text).join(' ')) },
+      };
+    });
   };
+
+  const addToken = (pageIndex: number) => setDraft(current => draftWithPages(current,
+    current.pages.map((page, index) => index === pageIndex
+      ? { ...page, pinyin: [...page.pinyin, { text: '', pinyin: '', needsReview: true }] }
+      : page),
+    pageIndex,
+  ));
+
+  const removeToken = (pageIndex: number, tokenIndex: number) => setDraft(current => draftWithPages(current,
+    current.pages.map((page, index) => {
+      if (index !== pageIndex) return page;
+      const pinyin = page.pinyin.filter((_, index) => index !== tokenIndex);
+      return { ...page, pinyin, text: pinyin.map(token => token.text).join(''), illustrationUrl: null, illustrationPreviewUrl: null };
+    }),
+    pageIndex,
+  ));
 
   const addPage = () => {
     setDraft(current => ({
@@ -438,25 +515,24 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
 
       {message && <p className="lesson-editor-message" role="status">{message}</p>}
 
-      {!!draft.fullText && step === 1 && <>
-        <div className="lesson-proofread-heading"><div><span className="lesson-section-index">STEP 02 / 校对内容</span><h3>先核对课文，再检查拼音</h3><p>识别结果只是初稿，橙色标记需要老师重点确认。</p></div><span>已识别 {photos.length || draft.pages.length} 页 · 待核对 {draft.pages.flatMap(page => page.pinyin).filter(token => token.needsReview).length} 处</span></div>
-        <div className={photos.length ? 'lesson-proofread-grid' : ''}><section className="lesson-editor-card lesson-meta-card"><div className="lesson-section-title"><div><h3>课文信息</h3><p>学生看到的内容以这里为准。</p></div></div><div className="lesson-meta-grid">
+      {!!draft.pages.length && step === 1 && <>
+        <div className="lesson-proofread-heading"><div><span className="lesson-section-index">STEP 02 / 校对内容</span><h3>核对课文信息和每个字</h3><p>直接修改下方字格中的文字与拼音，橙色标记需要老师重点确认。</p></div><span>已识别 {photos.length || draft.pages.length} 页 · 待核对 {draft.pages.flatMap(page => page.pinyin).filter(token => token.needsReview).length} 处</span></div>
+        <div className={photos.length ? 'lesson-proofread-grid' : ''}><section className="lesson-editor-card lesson-meta-card"><div className="lesson-section-title"><div><h3>课文信息</h3><p>先确认标题和年级，正文在下方逐字修改。</p></div></div><div className="lesson-meta-grid">
           <label>课文标题<Input value={draft.title} onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} /></label>
           <label>年级册次<Input value={draft.gradeLabel || ''} onChange={event => setDraft(current => ({ ...current, gradeLabel: event.target.value }))} /></label>
           <label>课文标识<Input value={draft.slug} onChange={event => setDraft(current => ({ ...current, slug: event.target.value }))} /></label>
-          <label className="wide">课文正文<Textarea rows={8} value={draft.fullText} onChange={event => setDraft(current => ({ ...current, fullText: event.target.value }))} /></label>
         </div></section>{!!photos.length && <aside className="lesson-editor-card proofread-photo"><div><h3>原书照片</h3><span>第 {photoPage + 1} / {photos.length} 页</span></div><Image src={photos[photoPage]?.dataUrl || photos[0].dataUrl} alt={`第 ${photoPage + 1} 页原书照片`} /><div className="proofread-photo-actions"><button type="button" disabled={photoPage === 0} onClick={() => setPhotoPage(current => current - 1)}>上一页</button><button type="button" disabled={photoPage === photos.length - 1} onClick={() => setPhotoPage(current => current + 1)}>下一页</button></div></aside>}</div>
 
         {!!reviewNotes.length && <section className="lesson-review-notes"><strong>老师需要核对</strong>{reviewNotes.map(note => <p key={note}><Check />{note}</p>)}</section>}
 
         <section className="lesson-editor-card">
-          <div className="lesson-section-title"><div><span className="lesson-section-index">STEP 02 / 校对内容</span><h3>逐字校对拼音</h3><p>橙色是多音字、轻声或变调。点拼音即可修改，输入 yi2 会自动变成 yí。</p></div></div>
-          <div className="pinyin-edit-pages">{draft.pages.map((page, pageIndex) => <article key={`${page.pageNo}-${page.text}`}>
+          <div className="lesson-section-title"><div><span className="lesson-section-index">STEP 02 / 校对内容</span><h3>逐字校对文字和拼音</h3><p>上方改拼音，下方改文字；改字后请重新确认读音。输入 yi2 会自动变成 yí。</p></div></div>
+          <div className="pinyin-edit-pages">{draft.pages.map((page, pageIndex) => <article key={page.id || pageIndex}>
             <small>分镜 {pageIndex + 1}</small><p>{page.text}</p>
-            <div className="pinyin-token-grid">{page.pinyin.map((token, tokenIndex) => <label className={token.needsReview ? 'needs-review' : ''} key={`${tokenIndex}-${token.text}`}>
-              <Input value={token.pinyin} aria-label={`${token.text}的拼音`} onChange={event => updateToken(pageIndex, tokenIndex, { pinyin: event.target.value })} onBlur={event => updateToken(pageIndex, tokenIndex, { pinyin: normalizePinyin(event.target.value), needsReview: false })} />
-              <span>{token.text}</span>
-            </label>)}</div>
+            <div className="pinyin-token-grid">{page.pinyin.map((token, tokenIndex) => <div className={`pinyin-token${token.needsReview ? ' needs-review' : ''}`} key={tokenIndex}>
+              <Input value={token.pinyin} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的拼音`} onChange={event => updateToken(pageIndex, tokenIndex, { pinyin: event.target.value })} onBlur={event => updateToken(pageIndex, tokenIndex, { pinyin: normalizePinyin(event.target.value), needsReview: !!token.text && !/[，。！？、；：,.!?;:\s]/u.test(token.text) && !event.target.value.trim() })} />
+              <Input value={token.text} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的文字`} maxLength={1} placeholder="字" onChange={event => updateToken(pageIndex, tokenIndex, { text: event.target.value })} onBlur={event => { if (!event.target.value) removeToken(pageIndex, tokenIndex); }} />
+            </div>)}<button type="button" className="pinyin-add-token" onClick={() => addToken(pageIndex)}><Plus size={15} />添加字</button></div>
           </article>)}</div>
         </section>
 
@@ -484,7 +560,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
       {!!draft.fullText && step === 3 && <section className="lesson-editor-card storyboard-editor">
           <div className="storyboard-heading"><div><span className="lesson-section-index">STEP 04 / 画面准备</span><h3>为每一段准备画面</h3><p>根据课文内容生成插画，帮助学生更好地理解和朗读。</p></div><div className="illustration-progress"><span>已完成 <strong>{completedIllustrations} / {draft.pages.length}</strong> 幅画面</span><div role="progressbar" aria-valuenow={completedIllustrations} aria-valuemin={0} aria-valuemax={draft.pages.length} aria-label="插画完成进度"><i style={{ width: `${draft.pages.length ? completedIllustrations / draft.pages.length * 100 : 0}%` }} /></div></div></div>
           <div className="storyboard-list">{draft.pages.map((page, index) => <article key={`scene-${page.id || index}`}>
-            <div className="storyboard-card-head"><strong>第 {index + 1} 段</strong><button type="button" onClick={() => { setDraft(current => ({ ...current, pages: reindexPages(current.pages.filter((_, pageIndex) => pageIndex !== index)) })); setIllustrationErrors({}); }} aria-label={`删除第${index + 1}段`} title="删除这一段"><Trash2 size={16} />删除</button></div>
+            <div className="storyboard-card-head"><strong>第 {index + 1} 段</strong><button type="button" disabled={draft.pages.length === 1} onClick={() => { setDraft(current => draftWithPages(current, reindexPages(current.pages.filter((_, pageIndex) => pageIndex !== index)))); setIllustrationErrors({}); }} aria-label={`删除第${index + 1}段`} title="删除这一段"><Trash2 size={16} />删除</button></div>
             <label className="storyboard-original">原文内容 <span>（可编辑）</span><Textarea value={page.text} placeholder="输入这一段的课文原文" onChange={event => updatePage(index, { text: event.target.value })} /><small>{page.text.length} / 500</small></label>
             <div className="storyboard-scene"><label>画面描述 <span>（可编辑）</span><Textarea value={page.scenePrompt} placeholder="描述要画出的角色、动作和场景" onChange={event => updatePage(index, { scenePrompt: event.target.value })} /><small>{page.scenePrompt.length} / 200</small></label><div className="storyboard-style"><span>参考风格</span><div role="group" aria-label={`第${index + 1}段插画风格`}>{ILLUSTRATION_STYLES.map(style => <button key={style.value} type="button" className={(page.illustrationStyle || 'watercolor') === style.value ? 'selected' : ''} aria-pressed={(page.illustrationStyle || 'watercolor') === style.value} onClick={() => updatePage(index, { illustrationStyle: style.value })}>{style.label}</button>)}</div></div></div>
             <div className="storyboard-image"><div className="storyboard-image-head"><span>插画预览</span>{page.illustrationUrl && <button type="button" onClick={() => void generateOne(index)} disabled={generating.has(index)}><Sparkles size={15} />替换</button>}</div>{page.illustrationUrl && !illustrationErrors[index] ? <img src={page.illustrationPreviewUrl || page.illustrationUrl} alt={`第${index + 1}幅插画`} onError={() => setIllustrationErrors(current => ({ ...current, [index]: '预览加载失败，请重新生成' }))} /> : <div className={`storyboard-image-empty${illustrationErrors[index] ? ' failed' : ''}`}><ImagePlus /><strong>{illustrationErrors[index] ? '生成失败，请重试' : '准备好生成插画'}</strong><span>{illustrationErrors[index] || '确认画面描述和风格后，生成这一段的插画。'}</span><Button size="sm" onClick={() => void generateOne(index)} disabled={generating.has(index)}>{generating.has(index) ? <LoaderCircle className="spin" /> : <Sparkles />}{generating.has(index) ? '正在生成…' : illustrationErrors[index] ? '重新生成' : '生成插画'}</Button></div>}</div>

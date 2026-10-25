@@ -102,12 +102,10 @@
 .photo-import-action button:disabled { box-shadow: none; }
 
 .lesson-editor-message { position: sticky; top: 8px; z-index: 3; margin: 12px 0; padding: 12px 16px; border-radius: 10px; background: #27533e; color: white; font-size: 13px; box-shadow: 0 8px 18px rgba(25, 65, 42, .16); }
-.lesson-meta-grid { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 18px; }
+.lesson-meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .lesson-meta-grid label, .rubric-editor label, .storyboard-copy label { display: grid; gap: 8px; color: #4f5f53; font-size: 12px; font-weight: 700; }
-.lesson-meta-grid label.wide { grid-column: 1 / -1; }
 .lesson-editor input:not([type="file"]), .lesson-editor textarea { border-color: #dcded2; border-radius: 9px; background: #fff; color: var(--editor-ink); font-size: 13px; }
 .lesson-editor input:not([type="file"]):focus-visible, .lesson-editor textarea:focus-visible { border-color: #6d9277; box-shadow: 0 0 0 3px rgba(75, 127, 83, .13); }
-.lesson-meta-grid textarea { min-height: 170px; line-height: 1.8; }
 .lesson-proofread-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 6px 0 18px; }
 .lesson-proofread-heading h3 { margin: 0 0 6px; color: var(--editor-green); font: 700 23px "Noto Serif SC", "Songti SC", serif; }
 .lesson-proofread-heading p { margin: 0; color: var(--editor-muted); font-size: 12px; }
@@ -134,10 +132,13 @@
 .pinyin-edit-pages article > small { color: #a16d38; font-size: 11px; font-weight: 800; }
 .pinyin-edit-pages article > p { margin: 8px 0 16px; font: 16px/1.8 "Noto Serif SC", "Songti SC", serif; }
 .pinyin-token-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-.pinyin-token-grid label { display: grid; width: 60px; gap: 4px; padding: 6px; border: 1px solid #e4e5d8; border-radius: 9px; background: white; text-align: center; }
-.pinyin-token-grid label.needs-review { border-color: #dda46d; background: #fff2e5; }
-.pinyin-token-grid input { height: 30px; padding: 2px 3px; border: 0 !important; background: transparent !important; color: #38694c !important; text-align: center; font-family: "KaiTi", "Kaiti SC", serif; }
-.pinyin-token-grid span { font: 16px "Noto Serif SC", "Songti SC", serif; }
+.pinyin-token { display: grid; width: 60px; gap: 4px; padding: 6px; border: 1px solid #e4e5d8; border-radius: 9px; background: white; text-align: center; }
+.pinyin-token.needs-review { border-color: #dda46d; background: #fff2e5; }
+.pinyin-token input { height: 30px; padding: 2px 3px; border: 0 !important; background: transparent !important; text-align: center; font-family: "KaiTi", "Kaiti SC", serif; }
+.pinyin-token input:first-child { color: #38694c !important; }
+.pinyin-token input:last-child { color: var(--editor-ink) !important; font-size: 17px !important; }
+.pinyin-add-token { display: grid; place-items: center; align-content: center; width: 60px; min-height: 74px; gap: 4px; border: 1px dashed #c6d5c4; border-radius: 9px; background: #f5f9f3; color: var(--editor-green); font-size: 11px; cursor: pointer; }
+.pinyin-add-token:hover { border-color: var(--editor-green); background: #eaf2e8; }
 .rubric-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 14px; }
 .rubric-editor .lesson-section-title { grid-column: 1 / -1; margin-bottom: 4px; }
 .rubric-overview { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -219,7 +220,6 @@
   .lesson-editor-steps > button { gap: 6px; padding: 5px; font-size: 11px; }
   .lesson-editor-steps > button + button::before { display: none; }
   .photo-import-card, .lesson-meta-grid, .lesson-proofread-grid, .rubric-editor { grid-template-columns: 1fr; }
-  .lesson-meta-grid label.wide { grid-column: auto; }
   .photo-import-intro { grid-column: auto; }
   .lesson-proofread-heading { align-items: flex-start; flex-direction: column; }
   .rubric-overview { grid-template-columns: 1fr 1fr 1fr; }
