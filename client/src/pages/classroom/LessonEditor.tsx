@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { isAxiosError } from 'axios';
 import {
   Check,
@@ -9,6 +9,8 @@ import {
   ImagePlus,
   Lightbulb,
   LoaderCircle,
+  Mic,
+  Square,
   Plus,
   PencilLine,
   Save,
@@ -29,8 +31,10 @@ import type {
 } from '@shared/api.interface';
 import {
   generateLessonIllustration,
+  generateLessonDemoAudio,
   recognizeLesson,
   saveLesson,
+  uploadLessonDemoRecording,
 } from '../../api/classroom';
 import { Button } from '../../components/ui/button';
 import { Image } from '../../components/ui/image';
@@ -109,6 +113,8 @@ function lessonToDraft(lesson?: AdminLessonSummary | null): LessonDraftInput {
       },
     },
     status: lesson.status === 'published' ? 'published' : 'draft',
+    fullDemoUrl: lesson.fullDemoStorageUrl || lesson.fullDemoUrl,
+    fullDemoPreviewUrl: lesson.fullDemoUrl,
     pages: lesson.pages.map((page, index) => ({
       id: page.id,
       pageNo: index + 1,
@@ -119,6 +125,8 @@ function lessonToDraft(lesson?: AdminLessonSummary | null): LessonDraftInput {
       illustrationStyle: page.illustrationStyle || 'watercolor',
       illustrationUrl: page.illustrationStorageUrl || page.illustrationUrl,
       illustrationPreviewUrl: page.illustrationUrl,
+      demoAudioUrl: page.demoAudioStorageUrl || page.demoAudioUrl,
+      demoAudioPreviewUrl: page.demoAudioUrl,
     })),
   };
 }
@@ -236,6 +244,10 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
   const [recognizing, setRecognizing] = useState(false);
   const [generating, setGenerating] = useState<Set<number>>(new Set());
   const [illustrationErrors, setIllustrationErrors] = useState<Record<number, string>>({});
+  const [audioErrors, setAudioErrors] = useState<Record<number, string>>({});
+  const [audioGenerating, setAudioGenerating] = useState<Set<number>>(new Set());
+  const [recordingTarget, setRecordingTarget] = useState<number | null>(null);
+  const recorderRef = useRef<{ recorder: MediaRecorder; stream: MediaStream } | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -244,6 +256,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
   const neutralTargets = useMemo(() => (draft.rubric.natural?.neutralTargets || []).join('、'), [draft.rubric.natural?.neutralTargets]);
   const pronunciationTargets = draft.rubric.delivery?.pronunciationTargets || [];
   const completedIllustrations = draft.pages.filter(page => page.illustrationUrl).length;
+  const completedAudio = draft.pages.filter(page => page.demoAudioUrl).length;
   const steps = ['上传照片', '校对课文', '教学重点', '分镜插画', '确认发布'];
   const goToStep = (next: number) => {
     setStep(next);
@@ -263,17 +276,19 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
     setDraft(current => {
       const pages = current.pages.map((page, pageIndex) => {
         if (pageIndex !== index) return page;
-        const contentChanged = (patch.text !== undefined && patch.text !== page.text)
+        const textChanged = patch.text !== undefined && patch.text !== page.text;
+        const contentChanged = textChanged
           || (patch.scenePrompt !== undefined && patch.scenePrompt !== page.scenePrompt)
           || (patch.illustrationStyle !== undefined && patch.illustrationStyle !== page.illustrationStyle);
         return {
           ...page,
           ...(contentChanged ? { illustrationUrl: null, illustrationPreviewUrl: null } : {}),
+          ...(textChanged ? { demoAudioUrl: null, demoAudioPreviewUrl: null } : {}),
           ...patch,
           ...(patch.text !== undefined ? { pinyin: alignTokens(page.pinyin, patch.text) } : {}),
         };
       });
-      return patch.text !== undefined ? draftWithPages(current, pages, index) : { ...current, pages };
+      return patch.text !== undefined ? { ...draftWithPages(current, pages, index), fullDemoUrl: null, fullDemoPreviewUrl: null } : { ...current, pages };
     });
     if (patch.text !== undefined || patch.scenePrompt !== undefined || patch.illustrationStyle !== undefined) {
       setIllustrationErrors(current => ({ ...current, [index]: '' }));
@@ -331,9 +346,9 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
           return { ...token, ...patch, pinyin: '', needsReview: !!patch.text && !/[，。！？、；：,.!?;:\s]/u.test(patch.text) };
         });
         const text = tokens.map(token => token.text).join('');
-        return { ...page, text, pinyin: tokens, ...(text !== page.text ? { illustrationUrl: null, illustrationPreviewUrl: null } : {}) };
+        return { ...page, text, pinyin: tokens, ...(text !== page.text ? { illustrationUrl: null, illustrationPreviewUrl: null, demoAudioUrl: null, demoAudioPreviewUrl: null } : {}) };
       });
-      return patch.text !== undefined ? draftWithPages(current, pages, pageIndex) : {
+      return patch.text !== undefined ? { ...draftWithPages(current, pages, pageIndex), fullDemoUrl: null, fullDemoPreviewUrl: null } : {
         ...current,
         pages,
         pinyin: { paragraphs: pages.map(page => page.pinyin.map(token => token.pinyin || token.text).join(' ')) },
@@ -348,18 +363,20 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
     pageIndex,
   ));
 
-  const removeToken = (pageIndex: number, tokenIndex: number) => setDraft(current => draftWithPages(current,
+  const removeToken = (pageIndex: number, tokenIndex: number) => setDraft(current => ({ ...draftWithPages(current,
     current.pages.map((page, index) => {
       if (index !== pageIndex) return page;
       const pinyin = page.pinyin.filter((_, index) => index !== tokenIndex);
-      return { ...page, pinyin, text: pinyin.map(token => token.text).join(''), illustrationUrl: null, illustrationPreviewUrl: null };
+      return { ...page, pinyin, text: pinyin.map(token => token.text).join(''), illustrationUrl: null, illustrationPreviewUrl: null, demoAudioUrl: null, demoAudioPreviewUrl: null };
     }),
     pageIndex,
-  ));
+  ), fullDemoUrl: null, fullDemoPreviewUrl: null }));
 
   const addPage = () => {
     setDraft(current => ({
       ...current,
+      fullDemoUrl: null,
+      fullDemoPreviewUrl: null,
       pages: reindexPages([...current.pages, {
         pageNo: current.pages.length + 1,
         pageType: 'body',
@@ -374,7 +391,87 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
     setIllustrationErrors({});
   };
 
-  const generateOne = async (index: number): Promise<boolean> => {
+  const generateAudio = async (index: number): Promise<boolean> => {
+    const text = index === -1 ? draft.fullText : draft.pages[index]?.text;
+    if (!text?.trim()) {
+      setAudioErrors(current => ({ ...current, [index]: '请先填写课文原文' }));
+      return false;
+    }
+    setAudioGenerating(current => new Set(current).add(index));
+    setAudioErrors(current => ({ ...current, [index]: '' }));
+    try {
+      const result = await generateLessonDemoAudio(text);
+      if (index === -1) setDraft(current => ({ ...current, fullDemoUrl: result.audioUrl, fullDemoPreviewUrl: result.previewUrl }));
+      else updatePage(index, { demoAudioUrl: result.audioUrl, demoAudioPreviewUrl: result.previewUrl });
+      return true;
+    } catch (error) {
+      const serverMessage = isAxiosError(error) ? error.response?.data?.message : undefined;
+      setAudioErrors(current => ({ ...current, [index]: typeof serverMessage === 'string' ? serverMessage : '生成失败，请重试' }));
+      return false;
+    } finally {
+      setAudioGenerating(current => {
+        const next = new Set(current);
+        next.delete(index);
+        return next;
+      });
+    }
+  };
+
+  const recordAudio = async (index: number) => {
+    if (recordingTarget === index && recorderRef.current) {
+      recorderRef.current.recorder.stop();
+      setRecordingTarget(null);
+      return;
+    }
+    if (recorderRef.current) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(type => MediaRecorder.isTypeSupported(type));
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+        recorderRef.current = null;
+        setRecordingTarget(null);
+        const blob = new Blob(chunks, { type: recorder.mimeType.split(';')[0] || 'audio/webm' });
+        if (blob.size < 1000 || blob.size > 10_000_000) {
+          setAudioErrors(current => ({ ...current, [index]: '录音过短或超过 10 MB，请重录' }));
+          return;
+        }
+        setAudioGenerating(current => new Set(current).add(index));
+        try {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(blob);
+          });
+          const result = await uploadLessonDemoRecording(dataUrl);
+          if (index === -1) setDraft(current => ({ ...current, fullDemoUrl: result.audioUrl, fullDemoPreviewUrl: result.previewUrl }));
+          else updatePage(index, { demoAudioUrl: result.audioUrl, demoAudioPreviewUrl: result.previewUrl });
+          setAudioErrors(current => ({ ...current, [index]: '' }));
+          setMessage('老师录音已替换，请保存草稿或发布课文');
+        } catch {
+          setAudioErrors(current => ({ ...current, [index]: '录音保存失败，请重试' }));
+        } finally {
+          setAudioGenerating(current => {
+            const next = new Set(current);
+            next.delete(index);
+            return next;
+          });
+        }
+      };
+      recorder.start();
+      recorderRef.current = { recorder, stream };
+      setRecordingTarget(index);
+      setAudioErrors(current => ({ ...current, [index]: '' }));
+    } catch {
+      setAudioErrors(current => ({ ...current, [index]: '无法使用麦克风，请检查浏览器权限' }));
+    }
+  };
+
+  const generateOne = async (index: number, includeFullAudio = true): Promise<boolean> => {
     const page = draft.pages[index];
     if (!page.text.trim() || !page.scenePrompt.trim()) {
       setIllustrationErrors(current => ({ ...current, [index]: '请先填写原文和画面描述' }));
@@ -382,6 +479,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
     }
     setGenerating(current => new Set(current).add(index));
     setIllustrationErrors(current => ({ ...current, [index]: '' }));
+    let imageDone = false;
     try {
       const result = await generateLessonIllustration({
         lessonTitle: draft.title,
@@ -394,29 +492,33 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
         illustrationUrl: result.illustrationUrl,
         illustrationPreviewUrl: result.previewUrl,
       });
-      return true;
+      imageDone = true;
     } catch (error) {
       const serverMessage = isAxiosError(error) ? error.response?.data?.message : undefined;
       const detail = typeof serverMessage === 'string' ? serverMessage : '请检查网络后重试';
       setIllustrationErrors(current => ({ ...current, [index]: detail }));
-      return false;
-    } finally {
-      setGenerating(current => {
-        const next = new Set(current);
-        next.delete(index);
-        return next;
-      });
     }
+    const pageAudioDone = page.demoAudioUrl ? true : await generateAudio(index);
+    const fullAudioDone = !includeFullAudio || draft.fullDemoUrl ? true : await generateAudio(-1);
+    setGenerating(current => {
+      const next = new Set(current);
+      next.delete(index);
+      return next;
+    });
+    return imageDone && pageAudioDone && fullAudioDone;
   };
 
   const generateAll = async () => {
     const indexes = draft.pages.map((_, index) => index)
-      .filter(index => !draft.pages[index].illustrationUrl);
+      .filter(index => !draft.pages[index].illustrationUrl || !draft.pages[index].demoAudioUrl);
     let failed = 0;
+    if (!draft.fullDemoUrl && !await generateAudio(-1)) failed += 1;
     for (const index of indexes) {
-      if (!await generateOne(index)) failed += 1;
+      if (draft.pages[index].illustrationUrl) {
+        if (!await generateAudio(index)) failed += 1;
+      } else if (!await generateOne(index, false)) failed += 1;
     }
-    setMessage(failed ? `${failed} 张插画未生成，请查看对应卡片并重试` : '插画已生成完成，可以继续确认发布');
+    setMessage(failed ? `有 ${failed} 项画面或朗读未生成，请查看对应提示并重试` : '插画和示范朗读已生成，可以试听并确认发布');
   };
 
   const save = async (status: 'draft' | 'published', closeOnSuccess = status === 'published') => {
@@ -558,17 +660,18 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
         </section>}
 
       {!!draft.fullText && step === 3 && <section className="lesson-editor-card storyboard-editor">
-          <div className="storyboard-heading"><div><span className="lesson-section-index">STEP 04 / 画面准备</span><h3>为每一段准备画面</h3><p>根据课文内容生成插画，帮助学生更好地理解和朗读。</p></div><div className="illustration-progress"><span>已完成 <strong>{completedIllustrations} / {draft.pages.length}</strong> 幅画面</span><div role="progressbar" aria-valuenow={completedIllustrations} aria-valuemin={0} aria-valuemax={draft.pages.length} aria-label="插画完成进度"><i style={{ width: `${draft.pages.length ? completedIllustrations / draft.pages.length * 100 : 0}%` }} /></div></div></div>
+          <div className="storyboard-heading"><div><span className="lesson-section-index">STEP 04 / 画面与声音</span><h3>为每一段准备画面和朗读</h3><p>生成插画时同步生成示范朗读，老师可试听后重录自己的版本。</p></div><div className="illustration-progress"><span>插画 <strong>{completedIllustrations} / {draft.pages.length}</strong> · 朗读 <strong>{completedAudio} / {draft.pages.length}</strong></span><div role="progressbar" aria-valuenow={completedIllustrations} aria-valuemin={0} aria-valuemax={draft.pages.length} aria-label="插画完成进度"><i style={{ width: `${draft.pages.length ? completedIllustrations / draft.pages.length * 100 : 0}%` }} /></div></div></div>
+          <div className="demo-audio-full"><div><strong><AudioLines size={19} />整篇示范朗读</strong><span>学生在课文页听到的完整示范读音</span></div>{draft.fullDemoUrl && <audio controls preload="none" src={draft.fullDemoPreviewUrl || draft.fullDemoUrl} aria-label="整篇示范朗读" />}{!draft.fullDemoUrl && <span className="demo-audio-pending">生成画面时自动准备</span>}<div className="demo-audio-actions"><Button size="sm" variant="outline" disabled={audioGenerating.has(-1) || recordingTarget !== null} onClick={() => void generateAudio(-1)}>{audioGenerating.has(-1) ? <LoaderCircle className="spin" /> : <Sparkles />}{draft.fullDemoUrl ? '重新生成' : '生成朗读'}</Button><Button size="sm" variant="outline" disabled={audioGenerating.has(-1) || (recordingTarget !== null && recordingTarget !== -1)} onClick={() => void recordAudio(-1)}>{recordingTarget === -1 ? <Square /> : <Mic />}{recordingTarget === -1 ? '结束录音' : draft.fullDemoUrl ? '重录' : '自己录'}</Button></div>{audioErrors[-1] && <small role="alert">{audioErrors[-1]}</small>}</div>
           <div className="storyboard-list">{draft.pages.map((page, index) => <article key={`scene-${page.id || index}`}>
-            <div className="storyboard-card-head"><strong>第 {index + 1} 段</strong><button type="button" disabled={draft.pages.length === 1} onClick={() => { setDraft(current => draftWithPages(current, reindexPages(current.pages.filter((_, pageIndex) => pageIndex !== index)))); setIllustrationErrors({}); }} aria-label={`删除第${index + 1}段`} title="删除这一段"><Trash2 size={16} />删除</button></div>
+            <div className="storyboard-card-head"><strong>第 {index + 1} 段</strong><button type="button" disabled={draft.pages.length === 1} onClick={() => { setDraft(current => ({ ...draftWithPages(current, reindexPages(current.pages.filter((_, pageIndex) => pageIndex !== index))), fullDemoUrl: null, fullDemoPreviewUrl: null })); setIllustrationErrors({}); }} aria-label={`删除第${index + 1}段`} title="删除这一段"><Trash2 size={16} />删除</button></div>
             <label className="storyboard-original">原文内容 <span>（可编辑）</span><Textarea value={page.text} placeholder="输入这一段的课文原文" onChange={event => updatePage(index, { text: event.target.value })} /><small>{page.text.length} / 500</small></label>
             <div className="storyboard-scene"><label>画面描述 <span>（可编辑）</span><Textarea value={page.scenePrompt} placeholder="描述要画出的角色、动作和场景" onChange={event => updatePage(index, { scenePrompt: event.target.value })} /><small>{page.scenePrompt.length} / 200</small></label><div className="storyboard-style"><span>参考风格</span><div role="group" aria-label={`第${index + 1}段插画风格`}>{ILLUSTRATION_STYLES.map(style => <button key={style.value} type="button" className={(page.illustrationStyle || 'watercolor') === style.value ? 'selected' : ''} aria-pressed={(page.illustrationStyle || 'watercolor') === style.value} onClick={() => updatePage(index, { illustrationStyle: style.value })}>{style.label}</button>)}</div></div></div>
-            <div className="storyboard-image"><div className="storyboard-image-head"><span>插画预览</span>{page.illustrationUrl && <button type="button" onClick={() => void generateOne(index)} disabled={generating.has(index)}><Sparkles size={15} />替换</button>}</div>{page.illustrationUrl && !illustrationErrors[index] ? <img src={page.illustrationPreviewUrl || page.illustrationUrl} alt={`第${index + 1}幅插画`} onError={() => setIllustrationErrors(current => ({ ...current, [index]: '预览加载失败，请重新生成' }))} /> : <div className={`storyboard-image-empty${illustrationErrors[index] ? ' failed' : ''}`}><ImagePlus /><strong>{illustrationErrors[index] ? '生成失败，请重试' : '准备好生成插画'}</strong><span>{illustrationErrors[index] || '确认画面描述和风格后，生成这一段的插画。'}</span><Button size="sm" onClick={() => void generateOne(index)} disabled={generating.has(index)}>{generating.has(index) ? <LoaderCircle className="spin" /> : <Sparkles />}{generating.has(index) ? '正在生成…' : illustrationErrors[index] ? '重新生成' : '生成插画'}</Button></div>}</div>
+            <div className="storyboard-image"><div className="storyboard-image-head"><span>插画预览</span>{page.illustrationUrl && <button type="button" onClick={() => void generateOne(index)} disabled={generating.has(index)}><Sparkles size={15} />替换</button>}</div>{page.illustrationUrl && !illustrationErrors[index] ? <img src={page.illustrationPreviewUrl || page.illustrationUrl} alt={`第${index + 1}幅插画`} onError={() => setIllustrationErrors(current => ({ ...current, [index]: '预览加载失败，请重新生成' }))} /> : <div className={`storyboard-image-empty${illustrationErrors[index] ? ' failed' : ''}`}><ImagePlus /><strong>{illustrationErrors[index] ? '生成失败，请重试' : '准备好生成插画'}</strong><span>{illustrationErrors[index] || '确认画面描述和风格后，生成这一段的插画。'}</span><Button size="sm" onClick={() => void generateOne(index)} disabled={generating.has(index)}>{generating.has(index) ? <LoaderCircle className="spin" /> : <Sparkles />}{generating.has(index) ? '正在生成…' : illustrationErrors[index] ? '重新生成' : '生成插画'}</Button></div>}<div className="storyboard-demo-audio"><div className="storyboard-image-head"><span><AudioLines size={15} />本段示范朗读</span>{page.demoAudioUrl && <span className="demo-audio-ready"><Check size={13} />已准备</span>}</div>{page.demoAudioUrl && <audio controls preload="none" src={page.demoAudioPreviewUrl || page.demoAudioUrl} aria-label={`第${index + 1}段示范朗读`} />}{!page.demoAudioUrl && <p>学生练习这一段时，可先听示范读音。</p>}<div className="demo-audio-actions"><Button size="sm" variant="outline" disabled={audioGenerating.has(index) || recordingTarget !== null} onClick={() => void generateAudio(index)}>{audioGenerating.has(index) ? <LoaderCircle className="spin" /> : <Sparkles />}{page.demoAudioUrl ? '重新生成' : 'AI 生成'}</Button><Button size="sm" variant="outline" disabled={audioGenerating.has(index) || (recordingTarget !== null && recordingTarget !== index)} onClick={() => void recordAudio(index)}>{recordingTarget === index ? <Square /> : <Mic />}{recordingTarget === index ? '结束录音' : page.demoAudioUrl ? '重录' : '自己录'}</Button></div>{audioErrors[index] && <small role="alert">{audioErrors[index]}</small>}</div></div>
           </article>)}</div>
-          <div className="storyboard-footer-actions"><Button variant="outline" onClick={addPage}><Plus />添加一段</Button><Button onClick={() => void generateAll()} disabled={!draft.pages.length || generating.size > 0 || completedIllustrations === draft.pages.length}><Sparkles />生成剩余插画</Button></div>
+          <div className="storyboard-footer-actions"><Button variant="outline" onClick={addPage}><Plus />添加一段</Button><Button onClick={() => void generateAll()} disabled={!draft.pages.length || generating.size > 0 || audioGenerating.size > 0 || (completedIllustrations === draft.pages.length && completedAudio === draft.pages.length && !!draft.fullDemoUrl)}><Sparkles />生成剩余插画和朗读</Button></div>
         </section>}
 
-      {!!draft.fullText && step === 4 && <section className="lesson-editor-card lesson-publish-card"><span className="lesson-section-index">STEP 05 / 确认发布</span><h3>最后检查一次</h3><p>发布后，学生就可以看到这篇课文并开始朗读。</p><div className="lesson-publish-summary"><div><small>课文</small><strong>{draft.title || '未填写标题'}</strong><span>{draft.gradeLabel || '未填写年级'}</span></div><div><small>分镜</small><strong>{draft.pages.length} 页</strong><span>正文与拼音已录入</span></div><div><small>插画</small><strong>{completedIllustrations} / {draft.pages.length} 幅</strong><span>{completedIllustrations === draft.pages.length ? '全部完成' : '仍有画面未生成'}</span></div></div><div className="lesson-publish-preview"><h4>学生看到的课文正文</h4><p>{draft.fullText}</p></div></section>}
+      {!!draft.fullText && step === 4 && <section className="lesson-editor-card lesson-publish-card"><span className="lesson-section-index">STEP 05 / 确认发布</span><h3>最后检查一次</h3><p>发布后，学生就可以看到这篇课文并开始朗读。</p><div className="lesson-publish-summary"><div><small>课文</small><strong>{draft.title || '未填写标题'}</strong><span>{draft.gradeLabel || '未填写年级'}</span></div><div><small>分镜</small><strong>{draft.pages.length} 页</strong><span>正文与拼音已录入</span></div><div><small>插画与声音</small><strong>{completedIllustrations} 幅 · {completedAudio} 段</strong><span>{draft.fullDemoUrl ? '整篇朗读已准备' : '整篇朗读尚未生成'}</span></div></div><div className="lesson-publish-preview"><h4>学生看到的课文正文</h4><p>{draft.fullText}</p></div></section>}
 
       {!!draft.fullText && <footer className="lesson-editor-footer"><Button variant="outline" onClick={() => goToStep(step - 1)} disabled={step === 0 || (step === 1 && !!lesson)}>返回上一步</Button><span className="lesson-footer-spacer" /><Button variant="outline" onClick={() => void save(draft.status === 'published' ? 'published' : 'draft', false)} disabled={saving}><Save />{draft.status === 'published' ? '保存修改' : '保存草稿'}</Button>{step < 4 ? <Button onClick={nextStep}><Check />下一步：{steps[step + 1]}</Button> : <Button onClick={() => void save('published')} disabled={saving || !draft.pages.length}><Check />确认发布课文</Button>}</footer>}
     </section>

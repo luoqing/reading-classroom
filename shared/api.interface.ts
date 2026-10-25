@@ -44,6 +44,7 @@ export interface LessonPageView {
   illustrationUrl: string | null;
   illustrationStorageUrl?: string | null;
   demoAudioUrl: string | null;
+  demoAudioStorageUrl?: string | null;
   videoStartMs: number | null;
   videoEndMs: number | null;
 }
@@ -101,6 +102,8 @@ export interface LessonDraftPageInput {
   illustrationStyle?: IllustrationStyle;
   illustrationUrl?: string | null;
   illustrationPreviewUrl?: string | null;
+  demoAudioUrl?: string | null;
+  demoAudioPreviewUrl?: string | null;
 }
 
 export interface LessonDraftInput {
@@ -112,7 +115,14 @@ export interface LessonDraftInput {
   pinyin: { paragraphs: string[] };
   rubric: LessonRubric;
   status: 'draft' | 'published';
+  fullDemoUrl?: string | null;
+  fullDemoPreviewUrl?: string | null;
   pages: LessonDraftPageInput[];
+}
+
+export interface LessonDemoAudioResult {
+  audioUrl: string;
+  previewUrl: string;
 }
 
 export interface LessonRecognitionImage {
@@ -153,6 +163,7 @@ export interface LessonView {
   revision: number;
   coverUrl: string | null;
   fullDemoUrl: string | null;
+  fullDemoStorageUrl?: string | null;
   videoTemplateUrl: string | null;
   pages: LessonPageView[];
 }

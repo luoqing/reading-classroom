@@ -4,6 +4,7 @@ import type {
   IllustrationGenerateRequest,
   IllustrationGenerateResult,
   LessonDraftInput,
+  LessonDemoAudioResult,
   LessonRecognitionRequest,
   LessonRecognitionResult,
   LessonView,
@@ -50,6 +51,20 @@ export async function recognizeLesson(input: LessonRecognitionRequest) {
 export async function generateLessonIllustration(input: IllustrationGenerateRequest) {
   const response = await apiRequest<IllustrationGenerateResult>({
     url: '/api/lessons/admin/illustrations', method: 'POST', data: input,
+  });
+  return response.data;
+}
+
+export async function generateLessonDemoAudio(text: string) {
+  const response = await apiRequest<LessonDemoAudioResult>({
+    url: '/api/lessons/admin/demo-audio', method: 'POST', data: { text },
+  });
+  return response.data;
+}
+
+export async function uploadLessonDemoRecording(dataUrl: string) {
+  const response = await apiRequest<LessonDemoAudioResult>({
+    url: '/api/lessons/admin/demo-audio/recording', method: 'POST', data: { dataUrl },
   });
   return response.data;
 }

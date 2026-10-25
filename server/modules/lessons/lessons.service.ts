@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { DRIZZLE_DATABASE, FileService, type PostgresJsDatabase } from '@lark-apaas/fullstack-nestjs-core';
 import { and, asc, eq, ne } from 'drizzle-orm';
+import { createHmac } from 'node:crypto';
+import WebSocket from 'ws';
 import { lesson, lessonPage } from '@server/database/schema';
 import type {
   IllustrationGenerateRequest,
@@ -15,6 +17,7 @@ import type {
   IllustrationStyle,
   LessonCatalog,
   LessonDraftInput,
+  LessonDemoAudioResult,
   LessonRecognitionRequest,
   LessonRecognitionResult,
   LessonView,
@@ -264,6 +267,74 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
     };
   }
 
+  private async storeDemoAudio(audio: Buffer, contentType: string, extension: string): Promise<LessonDemoAudioResult> {
+    const bucketId = await this.files.getDefaultBucket();
+    const fileName = `demo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+    const uploaded = await this.files.from(bucketId).upload(audio, {
+      filePath: `lessons/demo-audio/${fileName}`,
+      fileName,
+      contentType,
+      upsert: false,
+    });
+    const audioUrl = `/runtime/api/v1/storage/object/${uploaded.bucketID}/${uploaded.filePath}`;
+    return { audioUrl, previewUrl: await signedStorageObjectUrl(this.files, audioUrl) || audioUrl };
+  }
+
+  async uploadDemoRecording(dataUrl: string): Promise<LessonDemoAudioResult> {
+    const match = /^data:(audio\/(?:webm|mp4|mpeg|ogg));base64,([A-Za-z0-9+/]+={0,2})$/u.exec(dataUrl || '');
+    if (!match || dataUrl.length > 14_000_000) throw new BadRequestException('录音格式不支持或超过 10 MB');
+    const audio = Buffer.from(match[2], 'base64');
+    if (audio.length < 1000 || audio.length > 10_000_000) throw new BadRequestException('录音过短或超过 10 MB');
+    const extension = { 'audio/webm': 'webm', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/ogg': 'ogg' }[match[1]];
+    return this.storeDemoAudio(audio, match[1], extension);
+  }
+
+  async generateDemoAudio(text: string): Promise<LessonDemoAudioResult> {
+    const content = text?.trim();
+    if (!content || Buffer.byteLength(content, 'utf8') >= 8000) {
+      throw new BadRequestException('示范朗读正文不能为空，且须少于约 2000 个汉字');
+    }
+    const appId = process.env.XFYUN_APP_ID;
+    const apiKey = process.env.XFYUN_API_KEY;
+    const apiSecret = process.env.XFYUN_API_SECRET;
+    if (!appId || !apiKey || !apiSecret) throw new BadRequestException('示范朗读尚未配置，请联系管理员');
+    const host = 'tts-api.xfyun.cn';
+    const date = new Date().toUTCString();
+    const signature = createHmac('sha256', apiSecret)
+      .update(`host: ${host}\ndate: ${date}\nGET /v2/tts HTTP/1.1`).digest('base64');
+    const authorization = Buffer.from(`api_key="${apiKey}", algorithm="hmac-sha256", headers="host date request-line", signature="${signature}"`).toString('base64');
+    const socket = new WebSocket(`wss://${host}/v2/tts?${new URLSearchParams({ authorization, date, host })}`, { handshakeTimeout: 20000 });
+    const audio = await new Promise<Buffer>((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      let settled = false;
+      const timeout = setTimeout(() => finish(new Error('示范朗读生成超时，请重试')), 60000);
+      const finish = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        socket.close();
+        if (error) reject(error);
+        else resolve(Buffer.concat(chunks));
+      };
+      socket.on('error', () => finish(new Error('语音服务连接失败，请重试')));
+      socket.on('close', () => { if (!settled) finish(new Error('语音服务提前断开，请重试')); });
+      socket.on('open', () => socket.send(JSON.stringify({
+        common: { app_id: appId },
+        business: { aue: 'lame', sfl: 1, tte: 'UTF8', vcn: process.env.XFYUN_TTS_VOICE || 'xiaoyan', speed: 45 },
+        data: { status: 2, text: Buffer.from(content, 'utf8').toString('base64') },
+      })));
+      socket.on('message', raw => {
+        try {
+          const frame = JSON.parse(String(raw)) as { code?: number; message?: string; data?: { audio?: string; status?: number } };
+          if (frame.code !== 0) return finish(new Error(`语音服务未完成合成（${frame.code}）：${frame.message || '请重试'}`));
+          if (frame.data?.audio) chunks.push(Buffer.from(frame.data.audio, 'base64'));
+          if (frame.data?.status === 2) finish(chunks.length ? undefined : new Error('语音服务未返回音频'));
+        } catch { finish(new Error('语音服务返回格式错误，请重试')); }
+      });
+    });
+    return this.storeDemoAudio(audio, 'audio/mpeg', 'mp3');
+  }
+
   async saveDraft(input: LessonDraftInput): Promise<LessonView> {
     const slug = input.slug?.trim().toLowerCase();
     const title = input.title?.trim();
@@ -297,6 +368,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
       rubricJson: input.rubric,
       status: input.status,
       coverUrl: input.pages.find(page => page.illustrationUrl)?.illustrationUrl || null,
+      fullDemoUrl: input.fullDemoUrl || null,
       updatedAt: new Date(),
     };
     let lessonId = input.id;
@@ -316,6 +388,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
       textContent: page.text.trim(),
       pinyinJson: { tokens: page.pinyin || [], scenePrompt: page.scenePrompt || '', illustrationStyle: page.illustrationStyle || 'watercolor' },
       illustrationUrl: page.illustrationUrl || null,
+      demoAudioUrl: page.demoAudioUrl || null,
     })));
     return this.getById(lessonId);
   }
@@ -340,6 +413,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
       revision: item.revision,
       coverUrl: await signedStorageObjectUrl(this.files, item.coverUrl),
       fullDemoUrl: await signedStorageObjectUrl(this.files, item.fullDemoUrl),
+      fullDemoStorageUrl: item.fullDemoUrl,
       videoTemplateUrl: await signedStorageObjectUrl(this.files, item.videoTemplateUrl),
       pages: await Promise.all(pages.map(async page => {
         const storedPinyin = this.pagePinyin(page.pinyinJson);
@@ -354,6 +428,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
           illustrationStorageUrl: page.illustrationUrl,
           illustrationUrl: await signedStorageObjectUrl(this.files, page.illustrationUrl),
           demoAudioUrl: await signedStorageObjectUrl(this.files, page.demoAudioUrl),
+          demoAudioStorageUrl: page.demoAudioUrl,
           videoStartMs: page.videoStartMs,
           videoEndMs: page.videoEndMs,
         };

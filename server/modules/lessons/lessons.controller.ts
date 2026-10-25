@@ -32,6 +32,18 @@ export class LessonsController {
     return this.lessons.generateIllustration(input);
   }
 
+  @Post('admin/demo-audio')
+  async generateDemoAudio(@Req() req: Request, @Body() input: { text: string }) {
+    await this.auth.requireAccount(req, 'admin');
+    return this.lessons.generateDemoAudio(input.text);
+  }
+
+  @Post('admin/demo-audio/recording')
+  async uploadDemoRecording(@Req() req: Request, @Body() input: { dataUrl: string }) {
+    await this.auth.requireAccount(req, 'admin');
+    return this.lessons.uploadDemoRecording(input.dataUrl);
+  }
+
   @Post('admin/save')
   async saveDraft(@Req() req: Request, @Body() input: LessonDraftInput) {
     await this.auth.requireAccount(req, 'admin');
