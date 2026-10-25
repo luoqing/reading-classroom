@@ -383,14 +383,14 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
     pageIndex,
   ));
 
-  const removeToken = (pageIndex: number, tokenIndex: number) => setDraft(current => ({ ...draftWithPages(current,
+  const removeToken = (pageIndex: number, tokenIndex: number) => setDraft(current => draftWithPages(current,
     current.pages.map((page, index) => {
       if (index !== pageIndex) return page;
       const pinyin = page.pinyin.filter((_, index) => index !== tokenIndex);
-      return { ...page, pinyin, text: pinyin.map(token => token.text).join(''), illustrationUrl: null, illustrationPreviewUrl: null, demoAudioUrl: null, demoAudioPreviewUrl: null };
+      return { ...page, pinyin, text: pinyin.map(token => token.text).join('') };
     }),
     pageIndex,
-  ), fullDemoUrl: null, fullDemoPreviewUrl: null }));
+  ));
 
   const addPage = () => {
     setDraft(current => ({
@@ -697,7 +697,7 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
       <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>还有未保存的修改</AlertDialogTitle><AlertDialogDescription>离开后，这次修改将不会保留。可以先返回保存草稿。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>继续编辑</AlertDialogCancel><AlertDialogAction onClick={confirmLeave}>不保存，离开</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
     <AlertDialog open={pendingTokenRemoval !== null} onOpenChange={open => { if (!open) setPendingTokenRemoval(null); }}>
-      <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>删除{pendingTokenRemoval?.text ? `“${pendingTokenRemoval.text}”` : '这个字格'}和拼音？</AlertDialogTitle><AlertDialogDescription>这格的文字和拼音会一并删除。该分镜已有的插画、示范读音及整篇示范读音会清空，需要重新生成；保存后才会应用到课文。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>取消</AlertDialogCancel><AlertDialogAction onClick={() => { if (pendingTokenRemoval) removeToken(pendingTokenRemoval.pageIndex, pendingTokenRemoval.tokenIndex); setPendingTokenRemoval(null); }}>确认删除</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+      <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>删除{pendingTokenRemoval?.text ? `“${pendingTokenRemoval.text}”` : '这个字格'}和拼音？</AlertDialogTitle><AlertDialogDescription>这格的文字和拼音会一并删除，已有插画和示范读音会保留。保存后才会应用到课文。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>取消</AlertDialogCancel><AlertDialogAction onClick={() => { if (pendingTokenRemoval) removeToken(pendingTokenRemoval.pageIndex, pendingTokenRemoval.tokenIndex); setPendingTokenRemoval(null); }}>确认删除</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
   </div></div>;
 }
