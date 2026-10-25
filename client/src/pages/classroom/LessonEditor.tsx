@@ -185,7 +185,9 @@ function alignTokens(tokens: PinyinToken[], text: string): PinyinToken[] {
 
 function draftWithPages(current: LessonDraftInput, pages: LessonDraftPageInput[], editedPageIndex?: number): LessonDraftInput {
   let fullText = pages.map(page => page.text).join('\n');
-  if (editedPageIndex !== undefined && current.pages[editedPageIndex]?.text) {
+  if (editedPageIndex !== undefined && current.pages[editedPageIndex]?.pageType === 'cover') {
+    fullText = current.fullText;
+  } else if (editedPageIndex !== undefined && current.pages[editedPageIndex]?.text) {
     let searchFrom = 0;
     for (const page of current.pages.slice(0, editedPageIndex)) {
       const position = current.fullText.indexOf(page.text, searchFrom);
@@ -238,6 +240,7 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
   const [draft, setDraft] = useState<LessonDraftInput>(() => lessonToDraft(lesson));
   const savedSnapshot = useRef(JSON.stringify(lessonToDraft(lesson)));
   const [pendingDestination, setPendingDestination] = useState<Parameters<LessonEditorProps['onNavigate']>[0] | 'close' | null>(null);
+  const [pendingTokenRemoval, setPendingTokenRemoval] = useState<{ pageIndex: number; tokenIndex: number; text: string } | null>(null);
   const [step, setStep] = useState(lesson ? 1 : 0);
   const [furthestStep, setFurthestStep] = useState(lesson ? 1 : 0);
   const [photos, setPhotos] = useState<LessonRecognitionImage[]>([]);
@@ -647,7 +650,8 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
             <small>分镜 {pageIndex + 1}</small><p>{page.text}</p>
             <div className="pinyin-token-grid">{page.pinyin.map((token, tokenIndex) => <div className={`pinyin-token${token.needsReview ? ' needs-review' : ''}`} key={tokenIndex}>
               <Input value={token.pinyin} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的拼音`} onChange={event => updateToken(pageIndex, tokenIndex, { pinyin: event.target.value })} onBlur={event => updateToken(pageIndex, tokenIndex, { pinyin: normalizePinyin(event.target.value), needsReview: !!token.text && !/[，。！？、；：,.!?;:\s]/u.test(token.text) && !event.target.value.trim() })} />
-              <Input value={token.text} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的文字`} maxLength={1} placeholder="字" onChange={event => updateToken(pageIndex, tokenIndex, { text: event.target.value })} onBlur={event => { if (!event.target.value) removeToken(pageIndex, tokenIndex); }} />
+              <Input value={token.text} aria-label={`第${pageIndex + 1}段第${tokenIndex + 1}字的文字`} maxLength={1} placeholder="字" onChange={event => { if (event.target.value || !token.text) updateToken(pageIndex, tokenIndex, { text: event.target.value }); }} />
+              <button type="button" className="pinyin-token-delete" aria-label={`删除第${pageIndex + 1}段第${tokenIndex + 1}格的文字和拼音`} title="删除文字和拼音" onClick={() => setPendingTokenRemoval({ pageIndex, tokenIndex, text: token.text })}><X size={12} aria-hidden="true" /></button>
             </div>)}<button type="button" className="pinyin-add-token" onClick={() => addToken(pageIndex)}><Plus size={15} />添加字</button></div>
           </article>)}</div>
         </section>
@@ -691,6 +695,9 @@ export default function LessonEditor({ lesson, onClose, onSaved, onNavigate }: L
     </section>
     <AlertDialog open={pendingDestination !== null} onOpenChange={open => { if (!open) setPendingDestination(null); }}>
       <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>还有未保存的修改</AlertDialogTitle><AlertDialogDescription>离开后，这次修改将不会保留。可以先返回保存草稿。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>继续编辑</AlertDialogCancel><AlertDialogAction onClick={confirmLeave}>不保存，离开</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+    </AlertDialog>
+    <AlertDialog open={pendingTokenRemoval !== null} onOpenChange={open => { if (!open) setPendingTokenRemoval(null); }}>
+      <AlertDialogContent className="z-[100]"><AlertDialogHeader><AlertDialogTitle>删除{pendingTokenRemoval?.text ? `“${pendingTokenRemoval.text}”` : '这个字格'}和拼音？</AlertDialogTitle><AlertDialogDescription>这格的文字和拼音会一并删除。该分镜已有的插画、示范读音及整篇示范读音会清空，需要重新生成；保存后才会应用到课文。</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>取消</AlertDialogCancel><AlertDialogAction onClick={() => { if (pendingTokenRemoval) removeToken(pendingTokenRemoval.pageIndex, pendingTokenRemoval.tokenIndex); setPendingTokenRemoval(null); }}>确认删除</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
     </AlertDialog>
   </div></div>;
 }

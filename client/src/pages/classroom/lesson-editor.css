@@ -152,11 +152,15 @@ body:has(.lesson-editor-backdrop) [data-slot="alert-dialog-overlay"] { z-index: 
 .pinyin-edit-pages article > small { color: #a16d38; font-size: 11px; font-weight: 800; }
 .pinyin-edit-pages article > p { margin: 8px 0 16px; font: 16px/1.8 "Noto Serif SC", "Songti SC", serif; }
 .pinyin-token-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-.pinyin-token { display: grid; width: 60px; gap: 4px; padding: 6px; border: 1px solid #e4e5d8; border-radius: 9px; background: white; text-align: center; }
+.pinyin-token { position: relative; display: grid; width: 60px; gap: 4px; padding: 6px; border: 1px solid #e4e5d8; border-radius: 9px; background: white; text-align: center; }
 .pinyin-token.needs-review { border-color: #dda46d; background: #fff2e5; }
 .pinyin-token input { height: 30px; padding: 2px 3px; border: 0 !important; background: transparent !important; text-align: center; font-family: "KaiTi", "Kaiti SC", serif; }
-.pinyin-token input:first-child { color: #38694c !important; }
-.pinyin-token input:last-child { color: var(--editor-ink) !important; font-size: 17px !important; }
+.pinyin-token input:first-of-type { color: #38694c !important; }
+.pinyin-token input:last-of-type { color: var(--editor-ink) !important; font-size: 17px !important; }
+.pinyin-token-delete { position: absolute; top: -8px; right: -8px; display: grid; width: 19px; height: 19px; place-items: center; padding: 0; border: 1px solid #e8ccc3; border-radius: 50%; background: #fffaf7; color: #a35443; opacity: 0; visibility: hidden; pointer-events: none; transform: scale(.8); transition: opacity .15s ease, transform .15s ease, visibility .15s ease; }
+.pinyin-token:hover .pinyin-token-delete, .pinyin-token:focus-within .pinyin-token-delete { opacity: 1; visibility: visible; pointer-events: auto; transform: scale(1); }
+.pinyin-token-delete:hover { border-color: #bb6b57; background: #fff0e9; }
+.pinyin-token-delete:focus-visible { outline: 2px solid #a35443; outline-offset: 2px; }
 .pinyin-add-token { display: grid; place-items: center; align-content: center; width: 60px; min-height: 74px; gap: 4px; border: 1px dashed #c6d5c4; border-radius: 9px; background: #f5f9f3; color: var(--editor-green); font-size: 11px; cursor: pointer; }
 .pinyin-add-token:hover { border-color: var(--editor-green); background: #eaf2e8; }
 .rubric-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 14px; }
