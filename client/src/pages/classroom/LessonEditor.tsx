@@ -2,15 +2,20 @@ import { useMemo, useState } from 'react';
 import { isAxiosError } from 'axios';
 import {
   Check,
+  BookOpen,
+  ChartNoAxesCombined,
+  FileText,
   ImagePlus,
   LoaderCircle,
   Merge,
   Plus,
+  PencilLine,
   Save,
   Scissors,
   Sparkles,
   Trash2,
   Upload,
+  Users,
   X,
 } from 'lucide-react';
 import type {
@@ -148,7 +153,21 @@ const reindexPages = (pages: LessonDraftPageInput[]) => pages.map((page, index) 
   pageNo: index + 1,
 }));
 
-function fileToImage(file: File): Promise<LessonRecognitionImage> {
+async function fileToImage(file: File): Promise<LessonRecognitionImage> {
+  if (file.size > 600 * 1024) {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+      return { name: file.name, dataUrl: canvas.toDataURL('image/jpeg', .85) };
+    } catch {
+      // Keep the original photo when this browser cannot decode it for compression.
+    }
+  }
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve({ name: file.name, dataUrl: String(reader.result) });
@@ -162,6 +181,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
   const [step, setStep] = useState(lesson ? 1 : 0);
   const [furthestStep, setFurthestStep] = useState(lesson ? 1 : 0);
   const [photos, setPhotos] = useState<LessonRecognitionImage[]>([]);
+  const [photoPage, setPhotoPage] = useState(0);
   const [reviewNotes, setReviewNotes] = useState<string[]>([]);
   const [recognizing, setRecognizing] = useState(false);
   const [generating, setGenerating] = useState<Set<number>>(new Set());
@@ -206,13 +226,18 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
 
   const selectPhotos = async (files: FileList | null) => {
     if (!files?.length) return;
-    const selected = [...files].slice(0, 8);
+    const selected = [...files];
+    if (photos.length + selected.length > 8) {
+      setMessage('最多上传 8 张照片，请先移除不需要的页面');
+      return;
+    }
     if (selected.some(file => file.size > 10 * 1024 * 1024)) {
       setMessage('单张图片不能超过 10MB');
       return;
     }
     try {
-      setPhotos(await Promise.all(selected.map(fileToImage)));
+      const images = await Promise.all(selected.map(fileToImage));
+      setPhotos(current => [...current, ...images]);
       setMessage('图片已选好，可以开始 AI 识别');
     } catch {
       setMessage('图片读取失败，请重新选择');
@@ -440,31 +465,38 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
     },
   }));
 
-  return <div className="lesson-editor-backdrop">
+  return <div className="lesson-editor-backdrop"><div className="lesson-editor-shell">
+    <aside className="lesson-editor-sidebar" aria-label="教师工作台">
+      <div className="lesson-editor-brand"><BookOpen /><strong>朗读小屋</strong><span>让每一篇课文，<br />都读进孩子的心里</span></div>
+      <nav aria-label="工作台导航"><span><FileText />我的课文</span><span className="current"><PencilLine />录入新课文</span><span><BookOpen />我的资源</span><span><Users />班级管理</span><span><ChartNoAxesCombined />学情观察</span></nav>
+      <p className="lesson-editor-sidebar-note">在文字的阳光下，<br />看见更大的世界。</p>
+    </aside>
     <section className="lesson-editor" aria-label="AI 课文录入">
       <header className="lesson-editor-header">
         <div><span className="teacher-kicker">朗读小屋 · 课文工作台</span><h2>{lesson ? `编辑《${lesson.title}》` : '录入新课文'}</h2><p>每一步只完成一件事，随时可以保存当前进度。</p></div>
         <button className="drawer-close" onClick={onClose} aria-label="关闭课文编辑"><X /></button>
       </header>
 
-      <nav className="lesson-editor-steps" aria-label="录入流程">{steps.map((name, index) => <button key={name} type="button" className={index === step ? 'active' : index < step ? 'done' : ''} aria-current={index === step ? 'step' : undefined} disabled={index > furthestStep || (index === 0 && !!lesson)} onClick={() => goToStep(index)}><b>{index + 1}</b><span>{name}</span></button>)}</nav>
+      <nav className="lesson-editor-steps" aria-label="录入流程">{steps.map((name, index) => <button key={name} type="button" className={index === step ? 'active' : index < step ? 'done' : ''} aria-current={index === step ? 'step' : undefined} disabled={index > furthestStep || (index === 0 && !!lesson)} onClick={() => goToStep(index)}><b>{index < step ? <Check size={16} /> : index + 1}</b><span><strong>{name}</strong><small>{['拍照或上传课本页面', '识别并校对文字内容', '设置本课的教学目标', '为每一段准备画面', '预览并发布课文'][index]}</small></span></button>)}</nav>
 
       {step === 0 && !lesson && <section className="lesson-editor-card photo-import-card">
-        <div className="photo-import-intro"><span className="lesson-section-index">STEP 01 / 准备素材</span><h3>从课文照片开始</h3><p>拍下书页，交给 AI 整理成可编辑的课文初稿。识别后仍可逐字修改。</p><div className="photo-import-tips"><span>最多 8 张</span><span>支持 JPG、PNG、WebP</span><span>建议拍正、拍清晰</span></div></div>
-        <label className="photo-picker"><input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={event => void selectPhotos(event.target.files)} /><span className="photo-picker-icon"><Upload /></span><strong>{photos.length ? `已选择 ${photos.length} 张照片` : '点击选择课文照片'}</strong><small>可一次上传多页，按课文顺序选择</small></label>
-        {!!photos.length && <div className="photo-preview-row">{photos.map((photo, index) => <div className="photo-preview" key={`${photo.name}-${index}`}><Image src={photo.dataUrl} alt={photo.name} /><span>第 {index + 1} 页</span></div>)}</div>}
+        <div className="photo-import-intro"><span className="lesson-section-index">STEP 01 / 准备素材</span><h3>先拍下课文书页</h3><p>按课文顺序上传 1–8 张清晰照片，识别后可以修改。</p></div>
+        <label className="photo-picker"><input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={event => { void selectPhotos(event.target.files); event.target.value = ''; }} /><span className="photo-picker-icon"><Upload /></span><strong>{photos.length ? '继续添加课文照片' : '选择课文照片'}</strong><small>支持 JPG、PNG、WebP · 单张不超过 10 MB</small></label>
+        <aside className="photo-guide"><h4>拍摄小提示</h4><p><b>1</b>书页放平</p><p><b>2</b>避开反光和阴影</p><p><b>3</b>文字完整入镜</p></aside>
+        {!!photos.length && <div className="photo-preview-row">{photos.map((photo, index) => <div className="photo-preview" key={`${photo.name}-${index}`}><div><Image src={photo.dataUrl} alt={`第 ${index + 1} 页：${photo.name}`} /><button type="button" aria-label={`移除第 ${index + 1} 页照片`} onClick={() => setPhotos(current => current.filter((_, photoIndex) => photoIndex !== index))}><X size={14} /></button></div><span>第 {index + 1} 页</span></div>)}</div>}
         <div className="photo-import-action"><span>老师校对确认后才会发布给学生</span><Button onClick={() => void runRecognition()} disabled={!photos.length || recognizing}>{recognizing ? <LoaderCircle className="spin" /> : <Sparkles />}{recognizing ? '正在识别课文…' : '开始识别课文'}</Button></div>
       </section>}
 
       {message && <p className="lesson-editor-message" role="status">{message}</p>}
 
       {!!draft.fullText && step === 1 && <>
-        <section className="lesson-editor-card lesson-meta-card"><div className="lesson-section-title"><div><span className="lesson-section-index">STEP 02 / 校对内容</span><h3>课文信息与正文</h3><p>先确认标题、年级和正文；学生看到的内容以这里为准。</p></div></div><div className="lesson-meta-grid">
+        <div className="lesson-proofread-heading"><div><span className="lesson-section-index">STEP 02 / 校对内容</span><h3>先核对课文，再检查拼音</h3><p>识别结果只是初稿，橙色标记需要老师重点确认。</p></div><span>已识别 {photos.length || draft.pages.length} 页 · 待核对 {draft.pages.flatMap(page => page.pinyin).filter(token => token.needsReview).length} 处</span></div>
+        <div className={photos.length ? 'lesson-proofread-grid' : ''}><section className="lesson-editor-card lesson-meta-card"><div className="lesson-section-title"><div><h3>课文信息</h3><p>学生看到的内容以这里为准。</p></div></div><div className="lesson-meta-grid">
           <label>课文标题<Input value={draft.title} onChange={event => setDraft(current => ({ ...current, title: event.target.value }))} /></label>
           <label>年级册次<Input value={draft.gradeLabel || ''} onChange={event => setDraft(current => ({ ...current, gradeLabel: event.target.value }))} /></label>
           <label>课文标识<Input value={draft.slug} onChange={event => setDraft(current => ({ ...current, slug: event.target.value }))} /></label>
           <label className="wide">课文正文<Textarea rows={8} value={draft.fullText} onChange={event => setDraft(current => ({ ...current, fullText: event.target.value }))} /></label>
-        </div></section>
+        </div></section>{!!photos.length && <aside className="lesson-editor-card proofread-photo"><div><h3>原书照片</h3><span>第 {photoPage + 1} / {photos.length} 页</span></div><Image src={photos[photoPage]?.dataUrl || photos[0].dataUrl} alt={`第 ${photoPage + 1} 页原书照片`} /><div className="proofread-photo-actions"><button type="button" disabled={photoPage === 0} onClick={() => setPhotoPage(current => current - 1)}>上一页</button><button type="button" disabled={photoPage === photos.length - 1} onClick={() => setPhotoPage(current => current + 1)}>下一页</button></div></aside>}</div>
 
         {!!reviewNotes.length && <section className="lesson-review-notes"><strong>老师需要核对</strong>{reviewNotes.map(note => <p key={note}><Check />{note}</p>)}</section>}
 
@@ -482,7 +514,8 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
       </>}
 
       {!!draft.fullText && step === 2 && <section className="lesson-editor-card rubric-editor">
-          <div className="lesson-section-title"><div><span className="lesson-section-index">STEP 03 / 朗读目标</span><h3>设置教学重点</h3><p>这些规则会跟着本篇课文保存，孩子每次朗读都按它评测。</p></div></div>
+          <div className="lesson-section-title"><div><span className="lesson-section-index">STEP 03 / 朗读目标</span><h3>这篇课文，重点练什么？</h3><p>从识别建议开始，只需确认真正要教的内容。</p></div></div>
+          <div className="rubric-overview"><span><strong>读流利</strong><small>读得顺畅，有停顿</small></span><span><strong>读准确</strong><small>读准字音，不读错</small></span><span><strong>多音字与变调</strong><small>确认词组中的读音</small></span></div>
           <label><strong>读流利</strong><Textarea value={draft.rubric.natural?.description || ''} onChange={event => setDraft(current => ({ ...current, rubric: { ...current.rubric, natural: { ...current.rubric.natural, kind: 'fluency', description: event.target.value } } }))} /></label>
           <label><strong>读准确：重点字</strong><Input value={keyTargets} placeholder="秋=qiū、气=qì" onChange={event => setAccuracyTargets(event.target.value)} /></label>
           <label><strong>读准确：轻声字词</strong><Input value={neutralTargets} placeholder="凉了、黄了、来了" onChange={event => setDraft(current => ({ ...current, rubric: { ...current.rubric, natural: { ...current.rubric.natural, neutralTargets: event.target.value.split(/[、,，]/u).map(item => item.trim()).filter(Boolean) } } }))} /></label>
@@ -495,6 +528,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
               <Button size="sm" variant="ghost" aria-label={`删除${target.phrase || '这条'}读音规则`} onClick={() => removePronunciationTarget(index)}><Trash2 /></Button>
             </div>) : <p className="pronunciation-target-empty">还没有词组规则。比如可添加“一 / 一片片 / yí”“一 / 一群 / yì”。</p>}
             <label className="pronunciation-description">补充说明<Textarea value={draft.rubric.delivery?.description || ''} placeholder="例如：注意多音字在不同词语中的实际读音。" onChange={event => setDraft(current => ({ ...current, rubric: { ...current.rubric, delivery: { ...current.rubric.delivery, description: event.target.value } } }))} /></label>
+            <p className="rubric-confirm-note">机器建议需要老师确认，规则会用于后续朗读评测。</p>
           </div>
         </section>}
 
@@ -508,7 +542,7 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
               <label>画面描述<Textarea value={page.scenePrompt} onChange={event => updatePage(index, { scenePrompt: event.target.value })} /></label>
               <div className="storyboard-actions"><Button size="sm" variant="outline" onClick={() => splitPage(index)}><Scissors />拆分</Button>{index < draft.pages.length - 1 && <Button size="sm" variant="outline" onClick={() => mergeNext(index)}><Merge />与下一条合并</Button>}<Button size="sm" variant="ghost" onClick={() => { setDraft(current => ({ ...current, pages: reindexPages(current.pages.filter((_, pageIndex) => pageIndex !== index)) })); setIllustrationErrors({}); }}><Trash2 />删除</Button></div>
             </div>
-            <div className="storyboard-image"><small>插画预览</small>{page.illustrationUrl ? <Image src={page.illustrationPreviewUrl || page.illustrationUrl} alt={`第${index + 1}幅插画`} /> : <span className={illustrationErrors[index] ? 'failed' : ''}><ImagePlus />{illustrationErrors[index] ? '生成失败' : '等待生成'}</span>}{illustrationErrors[index] && <p className="illustration-error" role="alert">{illustrationErrors[index]}</p>}<Button size="sm" onClick={() => void generateOne(index)} disabled={generating.has(index)}>{generating.has(index) ? <LoaderCircle className="spin" /> : <Sparkles />}{generating.has(index) ? '正在生成…' : illustrationErrors[index] ? '重新生成' : page.illustrationUrl ? '替换插画' : '生成插画'}</Button></div>
+            <div className="storyboard-image"><small>插画预览</small>{page.illustrationUrl ? <img src={page.illustrationPreviewUrl || page.illustrationUrl} alt={`第${index + 1}幅插画`} onError={() => setIllustrationErrors(current => ({ ...current, [index]: '预览加载失败，请重新生成' }))} /> : <span className={illustrationErrors[index] ? 'failed' : ''}><ImagePlus />{illustrationErrors[index] ? '生成失败' : '等待生成'}</span>}{illustrationErrors[index] && <p className="illustration-error" role="alert">{illustrationErrors[index]}</p>}<Button size="sm" onClick={() => void generateOne(index)} disabled={generating.has(index)}>{generating.has(index) ? <LoaderCircle className="spin" /> : <Sparkles />}{generating.has(index) ? '正在生成…' : illustrationErrors[index] ? '重新生成' : page.illustrationUrl ? '替换插画' : '生成插画'}</Button></div>
           </article>)}</div>
           <Button onClick={() => void generateAll()} disabled={!draft.pages.length || generating.size > 0 || completedIllustrations === draft.pages.length}><Sparkles />生成剩余插画</Button>
         </section>}
@@ -517,5 +551,5 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
 
       {!!draft.fullText && <footer className="lesson-editor-footer"><Button variant="outline" onClick={() => goToStep(step - 1)} disabled={step === 0 || (step === 1 && !!lesson)}>返回上一步</Button><span className="lesson-footer-spacer" /><Button variant="outline" onClick={() => void save(draft.status === 'published' ? 'published' : 'draft', false)} disabled={saving}><Save />{draft.status === 'published' ? '保存修改' : '保存草稿'}</Button>{step < 4 ? <Button onClick={nextStep}><Check />下一步：{steps[step + 1]}</Button> : <Button onClick={() => void save('published')} disabled={saving || !draft.pages.length}><Check />确认发布课文</Button>}</footer>}
     </section>
-  </div>;
+  </div></div>;
 }

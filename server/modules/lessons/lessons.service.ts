@@ -68,9 +68,13 @@ export class LessonsService {
   }
 
   private arkKey() {
-    const key = process.env.ARK_API_KEY?.trim();
+    const key = this.arkSetting('ARK_API_KEY');
     if (!key) throw new BadRequestException('AI 课文录入尚未配置，请联系管理员');
     return key;
+  }
+
+  private arkSetting(name: 'ARK_API_KEY' | 'ARK_OCR_MODEL_ID' | 'ARK_IMAGE_MODEL_ID') {
+    return process.env[name]?.trim().replace(/(?:\\[nr])+$/gu, '').trim();
   }
 
   private async arkRequest(url: string, body: Record<string, unknown>) {
@@ -135,10 +139,10 @@ export class LessonsService {
 JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","paragraphs":[{"text":"一个完整自然段","pinyin":[{"text":"单个汉字或标点","pinyin":"带声调拼音；标点为空字符串","needsReview":true}],"scenes":[{"text":"适合一幅插画的原文，可包含一句或语义完整的相邻短句","scenePrompt":"无文字、无字幕的儿童水彩绘本画面描述"}]}],"reviewNotes":["需要老师核对的内容"],"rubric":{"natural":{"kind":"fluency","description":"读流利的具体要求","neutralTargets":["含轻声的原文词组"]},"accuracyTargets":[{"char":"重点字","reading":"拼音"}],"delivery":{"description":"多音字和变调等读准确要求","pronunciationTargets":[{"char":"要检查的多音字","phrase":"该字所在的原文词组","reading":"这个字在词组中的带调拼音","tone":2}]}}}\n
 要求：只识别课文标题和正文，忽略页码、插图旁孤立的生字、栏目名、“读一读”等学习提示，也不要把标题重复写进正文；保留正文原有自然段和标点；逐字给出拼音；多音字、轻声、“一/不”变调标 needsReview=true；“一”在四声前通常标 yí，在一二三声前通常标 yì，单独或序数语义时才标 yī；先按自然段、标点和语义分镜，不要机械地每逗号一张图；教学重点只有“读流利”和“读准确”两个维度，其中读准确检查重点字音节和声调、轻声字、多音字及变调；多音字不能只返回单个字，必须用 pronunciationTargets 按“字 + 原文词组 + 目标读音”逐条返回，同一个字在不同词组中出现时分别返回，例如“一片片 / yí”“一群 / yì”“一个 / yí”。`;
     const payload = await this.arkRequest(ARK_RESPONSES_URL, {
-      model: process.env.ARK_OCR_MODEL_ID || DEFAULT_OCR_MODEL,
+      model: this.arkSetting('ARK_OCR_MODEL_ID') || DEFAULT_OCR_MODEL,
       thinking: { type: 'disabled' },
       text: { format: { type: 'json_object' } },
-      max_output_tokens: 16000,
+      max_output_tokens: Math.min(16000, 6000 + (input.images.length - 1) * 1400),
       input: [{
         role: 'user',
         content: [{ type: 'input_text', text: prompt }, ...imageParts],
@@ -217,7 +221,7 @@ JSON 结构：{"title":"课文标题","gradeLabel":"年级册次，可为空","p
     }
     const prompt = `为小学一年级语文课文《${input.lessonTitle}》绘制第 ${input.pageNo} 幅插画。${input.scenePrompt}。清新乡村水彩绘本风，儿童友好，4:3 横版，人物与场景风格统一，画面中不要出现任何文字、拼音、字幕、水印或边框。`;
     const generated = await this.arkRequest(ARK_IMAGES_URL, {
-      model: process.env.ARK_IMAGE_MODEL_ID || DEFAULT_IMAGE_MODEL,
+      model: this.arkSetting('ARK_IMAGE_MODEL_ID') || DEFAULT_IMAGE_MODEL,
       prompt,
       size: '2304x1728',
       response_format: 'url',
