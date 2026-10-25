@@ -39,15 +39,11 @@
 }
 
 .teacher-brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 25px; }
-.teacher-brand > span {
+.teacher-brand > svg {
   width: 42px;
   height: 42px;
-  display: grid;
-  place-items: center;
   border-radius: 13px 13px 13px 4px;
   background: var(--teacher-green);
-  color: white;
-  font: 800 22px "Noto Serif SC", "Songti SC", serif;
   box-shadow: 0 8px 18px rgba(32, 93, 66, .2);
 }
 .teacher-brand div { display: grid; }

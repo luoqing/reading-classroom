@@ -41,6 +41,7 @@ import {
 } from '../../api/classroom';
 import { logout } from '../../api/auth';
 import LessonEditor from './LessonEditor';
+import ReadingCottageMark from './ReadingCottageMark';
 import { Input } from '../../components/ui/input';
 import {
   Select,
@@ -362,7 +363,7 @@ export default function TeacherDashboard({
 
   return <div className="teacher-app">
     <aside className="teacher-nav">
-      <div className="teacher-brand"><span>叶</span><div><strong>朗读小屋</strong><small>TEACHER DESK</small></div></div>
+      <div className="teacher-brand"><ReadingCottageMark /><div><strong>朗读小屋</strong><small>TEACHER DESK</small></div></div>
       <div className="teacher-workspace"><strong>教学版 · 老师工作台</strong><span>登录后展示真实学生数据</span></div>
       <nav aria-label="老师工作台导航">{navItems.map(item => {
         const Icon = item.icon;

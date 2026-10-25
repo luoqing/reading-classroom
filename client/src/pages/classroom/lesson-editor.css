@@ -8,15 +8,16 @@
 
 .lesson-editor-shell { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: 100vh; }
 .lesson-editor-sidebar { position: sticky; top: 0; display: flex; height: 100vh; flex-direction: column; border-right: 1px solid #e8e9e3; background: #fffefa; }
-.lesson-editor-brand { display: grid; grid-template-columns: 34px 1fr; align-items: center; gap: 4px 8px; padding: 27px 23px 25px; background: #204b39; color: #fff; }
-.lesson-editor-brand svg { grid-row: span 2; width: 30px; height: 30px; color: #f2dcad; }
+.lesson-editor-brand { display: grid; grid-template-columns: 46px 1fr; align-items: center; gap: 4px 8px; padding: 23px 20px 25px; background: #204b39; color: #fff; }
+.lesson-editor-brand svg { width: 46px; height: 46px; }
 .lesson-editor-brand strong { font: 700 22px "Noto Serif SC", "Songti SC", serif; letter-spacing: .05em; }
 .lesson-editor-brand span { grid-column: 1 / -1; margin-top: 10px; font: 13px/1.8 "Noto Serif SC", "Songti SC", serif; }
 .lesson-editor-sidebar nav { display: grid; gap: 6px; padding: 22px 13px; }
 .lesson-editor-sidebar nav span { display: flex; align-items: center; gap: 15px; padding: 12px 16px; border-radius: 9px; color: #303b35; font-size: 14px; }
 .lesson-editor-sidebar nav svg { width: 19px; height: 19px; }
 .lesson-editor-sidebar nav .current { background: #e9efe6; color: #204b39; font-weight: 700; }
-.lesson-editor-sidebar-note { margin: auto 18px 35px; color: #8a8577; font: italic 12px/1.9 "Noto Serif SC", "Songti SC", serif; text-align: center; }
+.lesson-editor-sidebar-art { position: relative; height: 268px; flex: none; margin-top: auto; background-image: url('https://bytedance.feishu.link/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1880026588711952.png'); background-position: left bottom; background-size: 220px auto; background-repeat: no-repeat; }
+.lesson-editor-sidebar-art p { position: absolute; top: 10px; right: 12px; margin: 0; color: #777667; font: italic 12px/1.9 "Noto Serif SC", "Songti SC", serif; text-align: center; transform: rotate(-6deg); }
 
 .lesson-editor {
   --editor-green: #244d3b;
@@ -64,30 +65,38 @@
 .lesson-editor-card button:hover:not(:disabled), .lesson-editor-footer button:hover:not(:disabled) { transform: translateY(-1px); }
 .lesson-editor-card button:focus-visible, .lesson-editor-footer button:focus-visible, .photo-picker:focus-within { outline: 3px solid #c69a59; outline-offset: 3px; }
 
-.photo-import-card { display: grid; grid-template-columns: minmax(0, 1fr) 230px; align-items: stretch; gap: 20px 24px; margin-top: 0; padding: clamp(24px, 4vw, 38px); }
+.photo-import-card { display: grid; grid-template-columns: minmax(0, 1fr) 250px; align-items: start; gap: 20px 24px; margin-top: 0; padding: clamp(24px, 4vw, 38px); }
 .photo-import-intro { grid-column: 1 / -1; }
+.photo-import-main { display: grid; min-width: 0; gap: 16px; }
 .photo-import-intro h3 { font-size: 27px; }
 .photo-import-intro p { max-width: 28em; }
 .photo-import-tips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 24px; }
 .photo-import-tips span { padding: 6px 9px; border: 1px solid #e6e5d7; border-radius: 6px; background: #f3f4eb; color: #55705b; font-size: 11px; }
-.photo-picker { position: relative; display: flex; min-height: 230px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; border: 1.5px dashed #9db49e; border-radius: 16px; background: radial-gradient(circle at 50% 20%, #fff, #f0f5ed); color: var(--editor-green); text-align: center; cursor: pointer; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
-.photo-picker:hover { border-color: var(--editor-green); background: #eaf2e7; transform: translateY(-2px); }
+.photo-picker { position: relative; display: flex; min-height: 230px; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; border: 1.5px dashed #cad2c9; border-radius: 14px; background: #fbfcfa; color: var(--editor-green); text-align: center; cursor: pointer; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+.photo-picker:hover { border-color: var(--editor-green); background: #f3f8f2; transform: translateY(-2px); }
 .photo-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.photo-picker-icon { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 3px; border-radius: 16px; background: #dfece0; }
-.photo-picker-icon svg { width: 25px; height: 25px; }
-.photo-picker strong { font-size: 16px; }
+.photo-picker-icon { display: grid; place-items: center; width: 66px; height: 56px; margin-bottom: 3px; color: #84928a; }
+.photo-picker-icon svg { width: 58px; height: 58px; stroke-width: 1.4; }
+.photo-picker strong { padding: 10px 25px; border-radius: 9px; background: var(--editor-green); color: #fff; font-size: 15px; box-shadow: 0 7px 16px rgba(36, 77, 59, .15); }
 .photo-picker small { color: #748477; font-size: 11px; }
-.photo-guide { padding: 18px; border: 1px solid #e2e8de; border-radius: 14px; background: #f5f8f3; }
-.photo-guide h4 { margin: 0 0 17px; color: var(--editor-green); font: 700 16px "Noto Serif SC", "Songti SC", serif; }
-.photo-guide p { display: flex; align-items: center; gap: 10px; margin: 12px 0; color: #526b58; font-size: 12px; }
-.photo-guide b { display: grid; place-items: center; width: 24px; height: 24px; flex: none; border-radius: 50%; background: #e0ebe1; color: var(--editor-green); font: 700 11px Georgia, serif; }
-.photo-preview-row { grid-column: 1 / -1; display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 5px; }
+.photo-guide { overflow: hidden; border: 1px solid #e2e8de; border-radius: 14px; background: #fffefa; }
+.photo-guide h4 { display: flex; align-items: center; gap: 8px; margin: 0; padding: 15px; background: #f2f5ef; color: var(--editor-green); font: 700 16px "Noto Serif SC", "Songti SC", serif; }
+.photo-guide h4 svg { width: 22px; height: 22px; }
+.photo-guide-items { display: grid; gap: 15px; padding: 13px; }
+.photo-guide h5 { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; color: var(--editor-ink); font-size: 12px; font-weight: 700; }
+.photo-guide b { display: grid; place-items: center; width: 25px; height: 25px; flex: none; border-radius: 50%; background: #e3eee3; color: var(--editor-green); font: 700 12px Georgia, serif; }
+.photo-guide-image { display: block; height: 78px; border-radius: 8px; background-color: #ecede6; background-image: url('https://bytedance.feishu.link/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1880027021445401.png'); background-size: 100% auto; background-repeat: no-repeat; }
+.photo-guide-image-1 { background-position: center top; }
+.photo-guide-image-2 { background-position: center center; }
+.photo-guide-image-3 { background-position: center bottom; }
+.photo-guide p { margin: 7px 0 0; color: #798177; font-size: 11px; line-height: 1.6; }
+.photo-preview-row { display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 5px; }
 .photo-preview { flex: 0 0 130px; padding: 6px; border: 1px solid var(--editor-line); border-radius: 12px; background: white; }
 .photo-preview > div { position: relative; }
 .photo-preview img { display: block; width: 100%; height: 96px; border-radius: 7px; object-fit: cover; }
 .photo-preview button { position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: rgba(32, 52, 40, .82); color: white; }
 .photo-preview span { display: block; padding-top: 5px; color: var(--editor-muted); text-align: center; font-size: 11px; }
-.photo-import-action { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 19px; border-top: 1px solid #eee9df; }
+.photo-import-action { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 19px; border-top: 1px solid #eee9df; }
 .photo-import-action > span { color: #7a857b; font-size: 12px; }
 .photo-import-action button, .lesson-editor-footer button:last-child { min-height: 43px; border-radius: 10px; background: var(--editor-green); color: white; font-weight: 700; box-shadow: 0 8px 18px rgba(36, 77, 59, .16); }
 .photo-import-action button:disabled { box-shadow: none; }
@@ -132,13 +141,18 @@
 .rubric-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 14px; }
 .rubric-editor .lesson-section-title { grid-column: 1 / -1; margin-bottom: 4px; }
 .rubric-overview { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.rubric-overview span { display: grid; gap: 4px; padding: 15px; border: 1px solid #e4e9de; border-radius: 11px; background: #f4f7f1; }
+.rubric-overview > span { display: flex; align-items: center; gap: 13px; padding: 15px; border: 1px solid #e4e9de; border-radius: 11px; background: #f4f7f1; }
+.rubric-overview > span > span { display: grid; gap: 4px; }
+.rubric-overview i { display: grid; place-items: center; width: 45px; height: 45px; flex: none; border-radius: 50%; background: #e0eadf; color: var(--editor-green); font-style: normal; }
+.rubric-overview i svg { width: 24px; height: 24px; stroke-width: 2; }
 .rubric-overview strong { color: var(--editor-green); font: 700 15px "Noto Serif SC", "Songti SC", serif; }
 .rubric-overview small { color: #728274; font-size: 11px; }
 .rubric-editor > label { grid-column: 1; }
 .rubric-editor > .pronunciation-targets { grid-column: 2; grid-row: 3 / span 3; }
 .rubric-editor > label, .pronunciation-targets { padding: 18px; border: 1px solid #e6e4d8; border-radius: 13px; background: #fbfaf6; }
 .rubric-editor label > strong, .pronunciation-targets-head strong { color: var(--editor-green); font: 700 15px "Noto Serif SC", "Songti SC", serif; }
+.rubric-label { display: flex; align-items: center; gap: 8px; }
+.rubric-label svg { width: 20px; height: 20px; color: var(--editor-green); }
 .pronunciation-targets { display: grid; gap: 12px; }
 .pronunciation-targets-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .pronunciation-targets-head > div { display: grid; gap: 4px; }
@@ -185,7 +199,7 @@
   .lesson-editor-steps > button { gap: 6px; padding: 5px; font-size: 11px; }
   .lesson-editor-steps > button + button::before { display: none; }
   .photo-import-card, .lesson-meta-grid, .lesson-proofread-grid, .rubric-editor { grid-template-columns: 1fr; }
-  .lesson-meta-grid label.wide, .photo-preview-row, .photo-import-action { grid-column: auto; }
+  .lesson-meta-grid label.wide { grid-column: auto; }
   .photo-import-intro { grid-column: auto; }
   .lesson-proofread-heading { align-items: flex-start; flex-direction: column; }
   .rubric-overview { grid-template-columns: 1fr 1fr 1fr; }

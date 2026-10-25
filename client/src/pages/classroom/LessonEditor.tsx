@@ -3,9 +3,11 @@ import { isAxiosError } from 'axios';
 import {
   Check,
   BookOpen,
+  AudioLines,
   ChartNoAxesCombined,
   FileText,
   ImagePlus,
+  Lightbulb,
   LoaderCircle,
   Merge,
   Plus,
@@ -13,6 +15,7 @@ import {
   Save,
   Scissors,
   Sparkles,
+  Target,
   Trash2,
   Upload,
   Users,
@@ -34,6 +37,7 @@ import { Button } from '../../components/ui/button';
 import { Image } from '../../components/ui/image';
 import { Input } from '../../components/ui/input';
 import { Textarea } from '../../components/ui/textarea';
+import ReadingCottageMark from './ReadingCottageMark';
 
 interface LessonEditorProps {
   lesson?: AdminLessonSummary | null;
@@ -467,9 +471,9 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
 
   return <div className="lesson-editor-backdrop"><div className="lesson-editor-shell">
     <aside className="lesson-editor-sidebar" aria-label="教师工作台">
-      <div className="lesson-editor-brand"><BookOpen /><strong>朗读小屋</strong><span>让每一篇课文，<br />都读进孩子的心里</span></div>
+      <div className="lesson-editor-brand"><ReadingCottageMark /><strong>朗读小屋</strong><span>让每一篇课文，<br />都读进孩子的心里</span></div>
       <nav aria-label="工作台导航"><span><FileText />我的课文</span><span className="current"><PencilLine />录入新课文</span><span><BookOpen />我的资源</span><span><Users />班级管理</span><span><ChartNoAxesCombined />学情观察</span></nav>
-      <p className="lesson-editor-sidebar-note">在文字的阳光下，<br />看见更大的世界。</p>
+      <div className="lesson-editor-sidebar-art"><p>在文字的阳光下，<br />看见更大的世界。</p></div>
     </aside>
     <section className="lesson-editor" aria-label="AI 课文录入">
       <header className="lesson-editor-header">
@@ -481,10 +485,11 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
 
       {step === 0 && !lesson && <section className="lesson-editor-card photo-import-card">
         <div className="photo-import-intro"><span className="lesson-section-index">STEP 01 / 准备素材</span><h3>先拍下课文书页</h3><p>按课文顺序上传 1–8 张清晰照片，识别后可以修改。</p></div>
-        <label className="photo-picker"><input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={event => { void selectPhotos(event.target.files); event.target.value = ''; }} /><span className="photo-picker-icon"><Upload /></span><strong>{photos.length ? '继续添加课文照片' : '选择课文照片'}</strong><small>支持 JPG、PNG、WebP · 单张不超过 10 MB</small></label>
-        <aside className="photo-guide"><h4>拍摄小提示</h4><p><b>1</b>书页放平</p><p><b>2</b>避开反光和阴影</p><p><b>3</b>文字完整入镜</p></aside>
-        {!!photos.length && <div className="photo-preview-row">{photos.map((photo, index) => <div className="photo-preview" key={`${photo.name}-${index}`}><div><Image src={photo.dataUrl} alt={`第 ${index + 1} 页：${photo.name}`} /><button type="button" aria-label={`移除第 ${index + 1} 页照片`} onClick={() => setPhotos(current => current.filter((_, photoIndex) => photoIndex !== index))}><X size={14} /></button></div><span>第 {index + 1} 页</span></div>)}</div>}
-        <div className="photo-import-action"><span>老师校对确认后才会发布给学生</span><Button onClick={() => void runRecognition()} disabled={!photos.length || recognizing}>{recognizing ? <LoaderCircle className="spin" /> : <Sparkles />}{recognizing ? '正在识别课文…' : '开始识别课文'}</Button></div>
+        <div className="photo-import-main"><label className="photo-picker"><input type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={event => { void selectPhotos(event.target.files); event.target.value = ''; }} /><span className="photo-picker-icon"><Upload /></span><strong>{photos.length ? '继续添加课文照片' : '选择课文照片'}</strong><small>支持 JPG、PNG、WebP · 单张不超过 10 MB</small></label>
+          {!!photos.length && <div className="photo-preview-row">{photos.map((photo, index) => <div className="photo-preview" key={`${photo.name}-${index}`}><div><Image src={photo.dataUrl} alt={`第 ${index + 1} 页：${photo.name}`} /><button type="button" aria-label={`移除第 ${index + 1} 页照片`} onClick={() => setPhotos(current => current.filter((_, photoIndex) => photoIndex !== index))}><X size={14} /></button></div><span>第 {index + 1} 页</span></div>)}</div>}
+          <div className="photo-import-action"><span>老师校对确认后才会发布给学生</span><Button onClick={() => void runRecognition()} disabled={!photos.length || recognizing}>{recognizing ? <LoaderCircle className="spin" /> : <Sparkles />}{recognizing ? '正在识别课文…' : '开始识别课文'}</Button></div>
+        </div>
+        <aside className="photo-guide"><h4><Lightbulb />拍摄小提示</h4><div className="photo-guide-items"><div><h5><b>1</b>书页放平</h5><span className="photo-guide-image photo-guide-image-1" role="img" aria-label="平放在桌上的课本示例" /><p>将课本平放在桌面上，保持页面平整。</p></div><div><h5><b>2</b>避开反光和阴影</h5><span className="photo-guide-image photo-guide-image-2" role="img" aria-label="光线均匀的课本示例" /><p>在光线均匀的地方拍摄，避开强光反光或手部阴影。</p></div><div><h5><b>3</b>文字完整入镜</h5><span className="photo-guide-image photo-guide-image-3" role="img" aria-label="整页文字完整入镜的示例" /><p>确保整页文字和插图都完整出现在画面中。</p></div></div></aside>
       </section>}
 
       {message && <p className="lesson-editor-message" role="status">{message}</p>}
@@ -515,12 +520,12 @@ export default function LessonEditor({ lesson, onClose, onSaved }: LessonEditorP
 
       {!!draft.fullText && step === 2 && <section className="lesson-editor-card rubric-editor">
           <div className="lesson-section-title"><div><span className="lesson-section-index">STEP 03 / 朗读目标</span><h3>这篇课文，重点练什么？</h3><p>从识别建议开始，只需确认真正要教的内容。</p></div></div>
-          <div className="rubric-overview"><span><strong>读流利</strong><small>读得顺畅，有停顿</small></span><span><strong>读准确</strong><small>读准字音，不读错</small></span><span><strong>多音字与变调</strong><small>确认词组中的读音</small></span></div>
-          <label><strong>读流利</strong><Textarea value={draft.rubric.natural?.description || ''} onChange={event => setDraft(current => ({ ...current, rubric: { ...current.rubric, natural: { ...current.rubric.natural, kind: 'fluency', description: event.target.value } } }))} /></label>
-          <label><strong>读准确：重点字</strong><Input value={keyTargets} placeholder="秋=qiū、气=qì" onChange={event => setAccuracyTargets(event.target.value)} /></label>
+          <div className="rubric-overview"><span><i><BookOpen /></i><span><strong>读流利</strong><small>读得顺畅，有停顿</small></span></span><span><i><Target /></i><span><strong>读准确</strong><small>读准字音，不读错</small></span></span><span><i><AudioLines /></i><span><strong>多音字与变调</strong><small>确认词组中的读音</small></span></span></div>
+          <label><strong className="rubric-label"><BookOpen />读流利</strong><Textarea value={draft.rubric.natural?.description || ''} onChange={event => setDraft(current => ({ ...current, rubric: { ...current.rubric, natural: { ...current.rubric.natural, kind: 'fluency', description: event.target.value } } }))} /></label>
+          <label><strong className="rubric-label"><Target />读准确：重点字</strong><Input value={keyTargets} placeholder="秋=qiū、气=qì" onChange={event => setAccuracyTargets(event.target.value)} /></label>
           <label><strong>读准确：轻声字词</strong><Input value={neutralTargets} placeholder="凉了、黄了、来了" onChange={event => setDraft(current => ({ ...current, rubric: { ...current.rubric, natural: { ...current.rubric.natural, neutralTargets: event.target.value.split(/[、,，]/u).map(item => item.trim()).filter(Boolean) } } }))} /></label>
           <div className="pronunciation-targets">
-            <div className="pronunciation-targets-head"><div><strong>读准确：多音字与变调</strong><span>按“字 + 所在词组 + 目标读音”设置，同一个字可添加多条。</span></div><Button size="sm" variant="outline" onClick={addPronunciationTarget}><Plus />添加词组</Button></div>
+            <div className="pronunciation-targets-head"><div><strong className="rubric-label"><AudioLines />读准确：多音字与变调</strong><span>按“字 + 所在词组 + 目标读音”设置，同一个字可添加多条。</span></div><Button size="sm" variant="outline" onClick={addPronunciationTarget}><Plus />添加词组</Button></div>
             {pronunciationTargets.length ? pronunciationTargets.map((target, index) => <div className="pronunciation-target-row" key={index}>
               <label>检查哪个字<Input value={target.char} maxLength={1} placeholder="一" onChange={event => updatePronunciationTarget(index, { char: event.target.value })} /></label>
               <label>所在词组<Input value={target.phrase} placeholder="一片片" onChange={event => updatePronunciationTarget(index, { phrase: event.target.value })} /></label>
