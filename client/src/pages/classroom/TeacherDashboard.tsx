@@ -266,7 +266,7 @@ export default function TeacherDashboard({
     [visible],
   );
   const focusStudents = useMemo(
-    () => overviewStudents.filter(needsHelp).slice(0, 5),
+    () => overviewStudents.filter(student => student.periodAttemptCount > 0 && needsHelp(student)).slice(0, 5),
     [overviewStudents],
   );
   const selected = data?.students.find((student: AdminStudentSummary) => student.id === selectedId)
