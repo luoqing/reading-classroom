@@ -18,7 +18,8 @@ body:has(.lesson-editor-backdrop) [data-slot="alert-dialog-overlay"] { z-index: 
 .classroom-sidebar nav svg { width: 19px; height: 19px; }
 .classroom-sidebar nav button:hover { background: #f0f4ee; color: #204b39; }
 .classroom-sidebar nav button:focus-visible { outline: 2px solid #c69a59; outline-offset: 2px; }
-.classroom-sidebar nav .active { background: #e9efe6; color: #204b39; font-weight: 700; }
+.classroom-sidebar nav .active { background: #c9dbcd; color: #214f39; font-weight: 700; }
+.classroom-sidebar nav .active:hover { background: #bdd3c2; color: #214f39; }
 .classroom-sidebar-art { position: relative; height: 268px; flex: none; margin-top: auto; background-image: url('https://bytedance.feishu.link/spark/app/app_17g7hv91br2/runtime/api/v1/storage/object/bucket_aadk2myxensps/1880026588711952.png'); background-position: left bottom; background-size: 220px auto; background-repeat: no-repeat; }
 .classroom-sidebar-art p { position: absolute; top: 116px; right: 12px; margin: 0; color: #777667; font: italic 12px/1.9 "Noto Serif SC", "Songti SC", serif; text-align: center; transform: rotate(-6deg); }
 
