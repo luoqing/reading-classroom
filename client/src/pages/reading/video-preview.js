@@ -1,5 +1,6 @@
 import { readingAssets } from './assets.js';
 import { primarySchoolPinyin } from './pinyin.js';
+import { exportReadingVideo } from './downloads.js';
 
 const autumnScenes = [
   {
@@ -132,12 +133,14 @@ export function setupVideoPreview({ sourceUrl = AUTUMN_VIDEO_SOURCE, onStatus = 
     <div class="video-preview-actions">
       <button class="secondary" type="button" data-video-close>返回评测</button>
       <button class="primary" type="button" data-video-play>▷ 预览自动切画面</button>
+      <button class="secondary" type="button" data-video-download>↓ 下载视频</button>
     </div>
-    <p class="small video-preview-note">当前先验证讯飞切句效果；孩子原声不变速，只调整画面播放速度。</p>`;
+    <p class="small video-preview-note">下载为 WebM 视频，保留孩子的原声；生成时请保持页面打开。</p>`;
   document.body.append(dialog);
   const video = dialog.querySelector('video');
   const audio = dialog.querySelector('audio');
   const playButton = dialog.querySelector('[data-video-play]');
+  const downloadButton = dialog.querySelector('[data-video-download]');
   const status = dialog.querySelector('.video-preview-status');
   const caption = dialog.querySelector('.video-preview-caption');
   const strip = dialog.querySelector('.video-scene-strip');
@@ -145,6 +148,8 @@ export function setupVideoPreview({ sourceUrl = AUTUMN_VIDEO_SOURCE, onStatus = 
   let animationFrame = null;
   let phase = 'idle';
   let activeSceneIndex = -1;
+  let reportAudioUrl = '';
+  let reportTitle = '';
 
   const setStatus = message => {
     status.textContent = message;
@@ -263,6 +268,24 @@ export function setupVideoPreview({ sourceUrl = AUTUMN_VIDEO_SOURCE, onStatus = 
     else if (phase === 'paused') void resume();
     else void start();
   });
+  downloadButton.addEventListener('click', async () => {
+    pause();
+    downloadButton.disabled = true;
+    try {
+      await exportReadingVideo({
+        scenes: timeline.map(scene => ({ ...scene, duration: scene.kind === 'title' ? 2 : undefined })),
+        videoUrl: sourceUrl,
+        fullAudioUrl: reportAudioUrl,
+        title: reportTitle,
+        onProgress: progress => setStatus(`正在生成视频 ${progress}% · 请保持页面打开`),
+      });
+      setStatus('视频已开始下载。');
+    } catch (error) {
+      setStatus(error?.message || '视频生成失败，请重试。');
+    } finally {
+      downloadButton.disabled = false;
+    }
+  });
   dialog.querySelector('.video-preview-close').addEventListener('click', close);
   dialog.querySelector('[data-video-close]').addEventListener('click', close);
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
@@ -276,6 +299,8 @@ export function setupVideoPreview({ sourceUrl = AUTUMN_VIDEO_SOURCE, onStatus = 
       }
       video.src = sourceUrl;
       audio.src = report.url;
+      reportAudioUrl = report.url;
+      reportTitle = report.title;
       strip.innerHTML = timeline.map((scene, index) => `<button type="button" tabindex="-1"><span>${index + 1}</span><strong>${scene.kind === 'title' ? '片头' : `画面 ${index}`}</strong><small>${scene.kind === 'title' ? '2.0秒' : formatSeconds(scene.audioEnd - scene.audioStart)}</small></button>`).join('');
       phase = 'idle';
       activeSceneIndex = -1;
@@ -336,6 +361,7 @@ export function setupIllustrationDubbing({
         <div class="dubbing-finish-actions">
           <button class="primary dubbing-evaluate" type="button" data-dubbing-evaluate disabled>提交评测</button>
           <button class="secondary dubbing-compose" type="button" data-dubbing-compose disabled>✦ 合成朗读视频</button>
+          <button class="secondary dubbing-download" type="button" data-dubbing-download disabled>↓ 下载视频</button>
         </div>
       </div>
     </div>
@@ -361,6 +387,7 @@ export function setupIllustrationDubbing({
   const nextButton = dialog.querySelector('[data-dubbing-next]');
   const evaluateButton = dialog.querySelector('[data-dubbing-evaluate]');
   const composeButton = dialog.querySelector('[data-dubbing-compose]');
+  const downloadButton = dialog.querySelector('[data-dubbing-download]');
   const clips = Array(autumnScenes.length).fill(null);
   let coverClip = null;
   let currentIndex = -1;
@@ -374,6 +401,7 @@ export function setupIllustrationDubbing({
   let composeIndex = -1;
   let evaluating = false;
   let showPinyin = true;
+  let exporting = false;
 
   const setStatus = message => {
     status.textContent = message;
@@ -425,7 +453,8 @@ export function setupIllustrationDubbing({
     recordButton.disabled = evaluating;
     recordButton.textContent = currentClip ? '● 重新录这一页' : '● 开始录这一页';
     evaluateButton.disabled = completed !== totalPages || evaluating;
-    composeButton.disabled = completed !== totalPages || evaluating;
+    composeButton.disabled = completed !== totalPages || evaluating || exporting;
+    downloadButton.disabled = completed !== totalPages || evaluating || exporting;
     evaluateButton.textContent = evaluating ? '正在评测…' : '提交评测';
     composeButton.textContent = completed === totalPages ? '✦ 合成朗读视频' : `还有 ${totalPages - completed} 页未录`;
     dots.innerHTML = `<button type="button" aria-label="封面" data-dubbing-page="-1" class="${isCover ? 'active ' : ''}${coverClip ? 'done' : ''}"><span>${coverClip ? '✓' : '秋'}</span></button>` + autumnScenes.map((_, index) => `<button type="button" aria-label="第 ${index + 2} 页" data-dubbing-page="${index}" class="${index === currentIndex ? 'active ' : ''}${clips[index] ? 'done' : ''}"><span>${clips[index] ? '✓' : index + 2}</span></button>`).join('');
@@ -633,6 +662,27 @@ export function setupIllustrationDubbing({
   nextButton.addEventListener('click', () => selectPage(currentIndex + 1));
   evaluateButton.addEventListener('click', () => void evaluate());
   composeButton.addEventListener('click', () => composing ? stopCompose() : void compose());
+  downloadButton.addEventListener('click', async () => {
+    const scenes = buildDubbingTimeline(clips, coverClip);
+    if (!scenes.length || exporting) return;
+    stopCompose();
+    exporting = true;
+    downloadButton.disabled = true;
+    try {
+      await exportReadingVideo({
+        scenes,
+        videoUrl: sourceUrl,
+        title: '秋天',
+        onProgress: progress => setStatus(`正在生成视频 ${progress}% · 请保持页面打开`),
+      });
+      setStatus('视频已开始下载。');
+    } catch (error) {
+      setStatus(error?.message || '视频生成失败，请重试。');
+    } finally {
+      exporting = false;
+      downloadButton.disabled = false;
+    }
+  });
   dots.addEventListener('click', event => {
     const button = event.target.closest('[data-dubbing-page]');
     if (button) selectPage(Number(button.dataset.dubbingPage));

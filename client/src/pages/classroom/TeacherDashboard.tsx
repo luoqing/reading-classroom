@@ -41,6 +41,7 @@ import {
 import { logout } from '../../api/auth';
 import LessonEditor from './LessonEditor';
 import LessonRubyText from './LessonRubyText';
+import { downloadAudio } from '../reading/downloads';
 import { restoreFullTextPinyin, restoreLegacyPagePinyin } from './legacy-lesson-pinyin';
 import TeacherWorkspaceSidebar, { type WorkspaceView } from './TeacherWorkspaceSidebar';
 import { Input } from '../../components/ui/input';
@@ -462,7 +463,7 @@ export default function TeacherDashboard({
     {view === 'students' && selectedId && selected && <div className="student-drawer-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setSelectedId(null); }}><aside className="student-drawer">
       <button className="drawer-close" onClick={() => setSelectedId(null)} aria-label="关闭学生档案"><X /></button><span className="teacher-kicker">学生档案</span><h2>{selected.displayName}</h2><p>{selected.username} · {selected.className || '未分班'} · 最近录音 {dateTimeText(selected.latestRecordedAt)}</p>
       <div className="drawer-actions"><button onClick={() => setResetTarget(selected)}><KeyRound size={16} />重置密码</button><button onClick={() => void changeStudentStatus(selected)}>{selected.status === 'active' ? '停用账号' : '恢复账号'}</button></div>
-      <h3>练习记录</h3>{attempts.map(item => <article className="attempt-card" key={item.attemptId}><div><strong>{item.lessonTitle}</strong><span>{dateTimeText(item.recordedAt)}</span></div><p>读流利 {stars(item.naturalStars)} · 读准确 {stars(item.accuracyStars)}</p>{item.teacherComment && <blockquote>{item.teacherComment}</blockquote>}{item.audioUrl && <audio controls preload="none" src={item.audioUrl} />}</article>)}
+      <h3>练习记录</h3>{attempts.map(item => <article className="attempt-card" key={item.attemptId}><div><strong>{item.lessonTitle}</strong><span>{dateTimeText(item.recordedAt)}</span></div><p>读流利 {stars(item.naturalStars)} · 读准确 {stars(item.accuracyStars)}</p>{item.teacherComment && <blockquote>{item.teacherComment}</blockquote>}{item.audioUrl && <><audio controls preload="none" src={item.audioUrl} /><button className="attempt-download" onClick={() => void downloadAudio(item.audioUrl!, `${selected.displayName}-${item.lessonTitle}-朗读录音`).catch(error => setMessage(error.message || '录音下载失败，请重试。'))}><Download size={15} />下载录音</button></>}</article>)}
       {!attempts.length && <p className="drawer-empty">还没有朗读记录。</p>}
     </aside></div>}
 

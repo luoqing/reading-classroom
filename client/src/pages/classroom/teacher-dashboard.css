@@ -386,6 +386,7 @@
 .attempt-card p { color: #a66d28; font-size: 12px; }
 .attempt-card blockquote { margin: 10px 0; padding: 10px 12px; border-left: 3px solid #89a47f; background: #f0f3eb; color: #4d5f50; }
 .attempt-card audio { width: 100%; height: 36px; }
+.attempt-download { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin-top: 8px; padding: 0 12px; border: 1px solid #d9ddcf; border-radius: 10px; color: #24513e; font-size: 12px; }
 .drawer-empty { padding: 30px; text-align: center; }
 .lesson-detail-stats { margin-top: 25px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }
 .lesson-detail-stats article { padding: 14px; border-radius: 14px; background: #f0eee5; display: grid; gap: 6px; }
