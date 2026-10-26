@@ -17,8 +17,7 @@ export async function signedStoredFileUrl(
 
 export async function signedStorageObjectUrl(files: FileService, url: string | null) {
   if (!url) return null;
-  if (/^https?:\/\//i.test(url)) return url;
   const match = url.match(STORAGE_OBJECT_PATTERN);
   if (!match) return url;
-  return signedStoredFileUrl(files, match[1], decodeURIComponent(match[2]));
+  return await signedStoredFileUrl(files, match[1], decodeURIComponent(match[2])) || url;
 }
