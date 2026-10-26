@@ -16,6 +16,7 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Share2,
   ShieldCheck,
   Sparkles,
   UsersRound,
@@ -42,6 +43,7 @@ import { logout } from '../../api/auth';
 import LessonEditor from './LessonEditor';
 import LessonRubyText from './LessonRubyText';
 import { downloadAudio } from '../reading/downloads';
+import { showShareDialog } from '../reading/share-media';
 import { restoreFullTextPinyin, restoreLegacyPagePinyin } from './legacy-lesson-pinyin';
 import TeacherWorkspaceSidebar, { type WorkspaceView } from './TeacherWorkspaceSidebar';
 import { Input } from '../../components/ui/input';
@@ -398,13 +400,13 @@ export default function TeacherDashboard({
 
         <div className="teacher-overview-grid">
           <section className="teacher-board">
-            <div className="board-heading"><div><h2>学生朗读情况</h2><p>按当前筛选结果展示每位学生最近一次评测</p></div><button onClick={exportReport}><Download size={15} />导出当前记录</button></div>
+            <div className="board-heading"><div><h2>学生朗读情况</h2><p>显示每位学生最近一次录音；练习次数按当前时间范围统计</p></div><button onClick={exportReport}><Download size={15} />导出当前记录</button></div>
             <div className="dimension-summary">
               <DimensionBar label="读流利" summary={data.dimensions.natural} />
               <DimensionBar label="读准确" summary={data.dimensions.accuracy} />
             </div>
             <div className="student-filter-tabs">{([['all', '全部'], ['help', '需帮助'], ['unpracticed', '未练习']] as const).map(([value, label]) => <button key={value} className={studentFilter === value ? 'active' : ''} onClick={() => setStudentFilter(value)}>{label}</button>)}</div>
-            <div className="teacher-table-head"><span>学生</span><span>最新课文</span><span>读流利</span><span>读准确</span><span>最近录音</span><span>原声</span></div>
+            <div className="teacher-table-head"><span>学生</span><span>最新课文</span><span>读流利</span><span>读准确</span><span>最近录音</span><span>播放 / 下载 / 分享</span></div>
             <div className="student-list">{overviewStudents.map(student => <div className={`student-row${selected?.id === student.id ? ' selected' : ''}`} key={student.id}>
               <button className="student-row-open" type="button" aria-label={`查看${student.displayName}的练习详情`} onClick={() => setSelectedId(student.id)} />
               <StudentIdentity student={student} />
@@ -412,7 +414,7 @@ export default function TeacherDashboard({
               <span className="dimension-stars">{stars(student.naturalStars)}</span>
               <span className="dimension-stars">{stars(student.accuracyStars)}</span>
               <span className="recorded-time"><Clock3 size={13} />{dateTimeText(student.latestRecordedAt)}</span>
-              <InlineAudio src={student.audioUrl} compact />
+              <div className="student-row-media"><InlineAudio src={student.audioUrl} compact />{student.audioUrl && <><button className="attempt-media-icon" aria-label={`下载${student.displayName}的录音`} data-tooltip="下载录音" onClick={() => void downloadAudio(student.audioUrl!, `${student.displayName}-${student.lessonTitle}-朗读录音`).catch(error => setMessage(error.message || '录音下载失败，请重试。'))}><Download size={16} /></button><button className="attempt-media-icon" aria-label={`分享${student.displayName}的录音`} data-tooltip="分享录音" onClick={() => void getStudentAttempts(student.id).then(items => showShareDialog(items.find(item => item.attemptId === student.latestAttemptId)?.audioUrl, '录音', true)).catch(error => setMessage(error.message || '分享链接生成失败，请重试。'))}><Share2 size={16} /></button></>}</div>
             </div>)}</div>
             {!overviewStudents.length && <div className="teacher-empty"><Leaf size={34} /><strong>暂无匹配的学生</strong><span>可以更换筛选条件查看。</span></div>}
           </section>
@@ -463,7 +465,7 @@ export default function TeacherDashboard({
     {view === 'students' && selectedId && selected && <div className="student-drawer-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setSelectedId(null); }}><aside className="student-drawer">
       <button className="drawer-close" onClick={() => setSelectedId(null)} aria-label="关闭学生档案"><X /></button><span className="teacher-kicker">学生档案</span><h2>{selected.displayName}</h2><p>{selected.username} · {selected.className || '未分班'} · 最近录音 {dateTimeText(selected.latestRecordedAt)}</p>
       <div className="drawer-actions"><button onClick={() => setResetTarget(selected)}><KeyRound size={16} />重置密码</button><button onClick={() => void changeStudentStatus(selected)}>{selected.status === 'active' ? '停用账号' : '恢复账号'}</button></div>
-      <h3>练习记录</h3>{attempts.map(item => <article className="attempt-card" key={item.attemptId}><div><strong>{item.lessonTitle}</strong><span>{dateTimeText(item.recordedAt)}</span></div><p>读流利 {stars(item.naturalStars)} · 读准确 {stars(item.accuracyStars)}</p>{item.teacherComment && <blockquote>{item.teacherComment}</blockquote>}{item.audioUrl && <><audio controls preload="none" src={item.audioUrl} /><button className="attempt-download" onClick={() => void downloadAudio(item.audioUrl!, `${selected.displayName}-${item.lessonTitle}-朗读录音`).catch(error => setMessage(error.message || '录音下载失败，请重试。'))}><Download size={15} />下载录音</button></>}</article>)}
+      <h3>练习记录</h3>{attempts.map(item => <article className="attempt-card" key={item.attemptId}><div><strong>{item.lessonTitle}</strong><span>{dateTimeText(item.recordedAt)}</span></div><p>读流利 {stars(item.naturalStars)} · 读准确 {stars(item.accuracyStars)}</p>{item.teacherComment && <blockquote>{item.teacherComment}</blockquote>}{item.audioUrl && <div className="attempt-media-row"><audio controls preload="none" src={item.audioUrl} /><button className="attempt-media-icon" aria-label="下载录音" data-tooltip="下载录音" onClick={() => void downloadAudio(item.audioUrl!, `${selected.displayName}-${item.lessonTitle}-朗读录音`).catch(error => setMessage(error.message || '录音下载失败，请重试。'))}><Download size={17} /></button><button className="attempt-media-icon" aria-label="分享录音" data-tooltip="分享录音" onClick={() => void getStudentAttempts(selected.id).then(items => showShareDialog(items.find(record => record.attemptId === item.attemptId)?.audioUrl, '录音', true)).catch(error => setMessage(error.message || '分享链接生成失败，请重试。'))}><Share2 size={17} /></button></div>}</article>)}
       {!attempts.length && <p className="drawer-empty">还没有朗读记录。</p>}
     </aside></div>}
 

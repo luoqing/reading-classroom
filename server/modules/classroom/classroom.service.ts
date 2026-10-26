@@ -177,8 +177,8 @@ export class ClassroomService {
       !filters.className || account.className === filters.className,
     );
     const students: AdminStudentSummary[] = await Promise.all(selectedAccounts.map(async account => {
-      const latest = filteredAttempts.find(row => row.attempt.studentId === account.id);
       const lifetimeAttempts = uniqueAttempts.filter(row => row.attempt.studentId === account.id);
+      const latest = lifetimeAttempts.find(row => !filters.lessonId || row.lessonId === filters.lessonId);
       const periodAttempts = filteredAttempts.filter(row => row.attempt.studentId === account.id);
       return {
         ...this.accountView(account),

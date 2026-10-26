@@ -1,5 +1,6 @@
 import { primarySchoolPinyin } from './pinyin.js';
-import { exportReadingVideo } from './downloads.js';
+import { downloadIcon, exportReadingVideo } from './downloads.js';
+import { shareIcon, showShareDialog, uploadShareVideo } from './share-media.js';
 
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 const escapeHTML = value => String(value).replace(/[&<>"']/g, character => ({
@@ -20,7 +21,7 @@ export function renderPageDubbingScript(page, showPinyin = true) {
     : escapeHTML(token)).join('');
 }
 
-export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () => {} } = {}) {
+export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () => {}, canShare = false } = {}) {
   const dialog = document.createElement('dialog');
   dialog.className = 'dubbing-dialog page-dubbing-dialog';
   dialog.setAttribute('aria-labelledby', 'pageDubbingTitle');
@@ -58,7 +59,7 @@ export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () =>
         <div class="dubbing-finish-actions">
           <button class="primary dubbing-evaluate" type="button" data-evaluate disabled>提交评测</button>
           <button class="secondary dubbing-compose" type="button" data-compose disabled>✦ 合成朗读视频</button>
-          <button class="secondary dubbing-download" type="button" data-download disabled>↓ 下载视频</button>
+          <div class="dubbing-media-actions"><button class="secondary media-icon-button" type="button" data-download aria-label="下载视频" data-tooltip="下载视频" disabled>${downloadIcon}</button>${canShare ? `<button class="secondary media-icon-button" type="button" data-share aria-label="分享视频" data-tooltip="分享视频" disabled>${shareIcon}</button>` : ""}</div>
         </div>
       </div>
     </div>
@@ -82,6 +83,7 @@ export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () =>
   const evaluateButton = dialog.querySelector('[data-evaluate]');
   const composeButton = dialog.querySelector('[data-compose]');
   const downloadButton = dialog.querySelector('[data-download]');
+  const shareButton = dialog.querySelector('[data-share]');
   const dots = dialog.querySelector('.dubbing-dots');
   const status = dialog.querySelector('.dubbing-status');
 
@@ -144,6 +146,7 @@ export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () =>
     evaluateButton.disabled = completed !== pages.length || evaluating || composing;
     composeButton.disabled = completed !== pages.length || evaluating;
     downloadButton.disabled = completed !== pages.length || evaluating || exporting;
+    if (shareButton) shareButton.disabled = downloadButton.disabled;
     evaluateButton.textContent = evaluating ? '正在评测…' : '提交评测';
     composeButton.textContent = composing ? 'Ⅱ 停止播放' : completed === pages.length ? '✦ 合成朗读视频' : `还有 ${pages.length - completed} 页未录`;
     dots.innerHTML = pages.map((page, index) => `<button type="button" data-page="${index}" aria-label="第 ${index + 1} 页" class="${index === currentIndex ? 'active ' : ''}${clips[index] ? 'done' : ''}"><span>${clips[index] ? '✓' : index + 1}</span></button>`).join('');
@@ -314,6 +317,28 @@ export function setupPageDubbing({ onEvaluate = async () => {}, onStatus = () =>
     } finally {
       exporting = false;
       downloadButton.disabled = false;
+    }
+  });
+  shareButton?.addEventListener('click', async () => {
+    if (completedCount() !== pages.length || exporting) return;
+    composing = false;
+    stopAudio();
+    exporting = true;
+    shareButton.disabled = true;
+    try {
+      const blob = await exportReadingVideo({
+        scenes: pages.map((page, index) => ({ imageUrl: page.illustrationUrl, audioUrl: clips[index].url, text: page.text })),
+        title: lesson.title,
+        download: false,
+        onProgress: value => setStatus(`正在准备分享视频 ${value}% · 请保持页面打开`),
+      });
+      showShareDialog(await uploadShareVideo(blob, lesson.title), '视频');
+      setStatus('视频已保存，可以复制链接分享。');
+    } catch (error) {
+      setStatus(error?.message || '视频分享失败，请重试。');
+    } finally {
+      exporting = false;
+      shareButton.disabled = false;
     }
   });
   pinyinButton.addEventListener('click', () => { showPinyin = !showPinyin; render(); });

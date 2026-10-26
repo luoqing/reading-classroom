@@ -1,6 +1,7 @@
 import { readingAssets } from './assets.js';
 import { primarySchoolPinyin } from './pinyin.js';
-import { exportReadingVideo } from './downloads.js';
+import { downloadIcon, exportReadingVideo } from './downloads.js';
+import { shareIcon, showShareDialog, uploadShareVideo } from './share-media.js';
 
 const autumnScenes = [
   {
@@ -114,7 +115,7 @@ export function buildDubbingTimeline(clips, coverClip) {
 const clamp = (value, minimum, maximum) => Math.min(maximum, Math.max(minimum, value));
 const formatSeconds = value => `${Math.max(0, value).toFixed(1)}秒`;
 
-export function setupVideoPreview({ sourceUrl = AUTUMN_VIDEO_SOURCE, onStatus = () => {} } = {}) {
+export function setupVideoPreview({ sourceUrl = AUTUMN_VIDEO_SOURCE, onStatus = () => {}, canShare = false } = {}) {
   const dialog = document.createElement('dialog');
   dialog.className = 'video-preview-dialog';
   dialog.setAttribute('aria-labelledby', 'videoPreviewTitle');
@@ -133,7 +134,8 @@ export function setupVideoPreview({ sourceUrl = AUTUMN_VIDEO_SOURCE, onStatus = 
     <div class="video-preview-actions">
       <button class="secondary" type="button" data-video-close>返回评测</button>
       <button class="primary" type="button" data-video-play>▷ 预览自动切画面</button>
-      <button class="secondary" type="button" data-video-download>↓ 下载视频</button>
+      <button class="secondary media-icon-button" type="button" data-video-download aria-label="下载视频" data-tooltip="下载视频">${downloadIcon}</button>
+      ${canShare ? `<button class="secondary media-icon-button" type="button" data-video-share aria-label="分享视频" data-tooltip="分享视频">${shareIcon}</button>` : ""}
     </div>
     <p class="small video-preview-note">下载为 WebM 视频，保留孩子的原声；生成时请保持页面打开。</p>`;
   document.body.append(dialog);
@@ -286,6 +288,27 @@ export function setupVideoPreview({ sourceUrl = AUTUMN_VIDEO_SOURCE, onStatus = 
       downloadButton.disabled = false;
     }
   });
+  dialog.querySelector('[data-video-share]')?.addEventListener('click', async event => {
+    pause();
+    const button = event.currentTarget;
+    button.disabled = true;
+    try {
+      const blob = await exportReadingVideo({
+        scenes: timeline.map(scene => ({ ...scene, duration: scene.kind === 'title' ? 2 : undefined })),
+        videoUrl: sourceUrl,
+        fullAudioUrl: reportAudioUrl,
+        title: reportTitle,
+        download: false,
+        onProgress: progress => setStatus(`正在准备分享视频 ${progress}% · 请保持页面打开`),
+      });
+      showShareDialog(await uploadShareVideo(blob, reportTitle), '视频');
+      setStatus('视频已保存，可以复制链接分享。');
+    } catch (error) {
+      setStatus(error?.message || '视频分享失败，请重试。');
+    } finally {
+      button.disabled = false;
+    }
+  });
   dialog.querySelector('.video-preview-close').addEventListener('click', close);
   dialog.querySelector('[data-video-close]').addEventListener('click', close);
   dialog.addEventListener('cancel', event => { event.preventDefault(); close(); });
@@ -323,6 +346,7 @@ export function setupIllustrationDubbing({
   demoSourceUrls = AUTUMN_DEMO_SOURCES,
   onEvaluate = async () => {},
   onStatus = () => {},
+  canShare = false,
 } = {}) {
   const dialog = document.createElement('dialog');
   dialog.className = 'dubbing-dialog';
@@ -361,7 +385,7 @@ export function setupIllustrationDubbing({
         <div class="dubbing-finish-actions">
           <button class="primary dubbing-evaluate" type="button" data-dubbing-evaluate disabled>提交评测</button>
           <button class="secondary dubbing-compose" type="button" data-dubbing-compose disabled>✦ 合成朗读视频</button>
-          <button class="secondary dubbing-download" type="button" data-dubbing-download disabled>↓ 下载视频</button>
+          <div class="dubbing-media-actions"><button class="secondary media-icon-button" type="button" data-dubbing-download aria-label="下载视频" data-tooltip="下载视频" disabled>${downloadIcon}</button>${canShare ? `<button class="secondary media-icon-button" type="button" data-dubbing-share aria-label="分享视频" data-tooltip="分享视频" disabled>${shareIcon}</button>` : ""}</div>
         </div>
       </div>
     </div>
@@ -388,6 +412,7 @@ export function setupIllustrationDubbing({
   const evaluateButton = dialog.querySelector('[data-dubbing-evaluate]');
   const composeButton = dialog.querySelector('[data-dubbing-compose]');
   const downloadButton = dialog.querySelector('[data-dubbing-download]');
+  const shareButton = dialog.querySelector('[data-dubbing-share]');
   const clips = Array(autumnScenes.length).fill(null);
   let coverClip = null;
   let currentIndex = -1;
@@ -455,6 +480,7 @@ export function setupIllustrationDubbing({
     evaluateButton.disabled = completed !== totalPages || evaluating;
     composeButton.disabled = completed !== totalPages || evaluating || exporting;
     downloadButton.disabled = completed !== totalPages || evaluating || exporting;
+    if (shareButton) shareButton.disabled = downloadButton.disabled;
     evaluateButton.textContent = evaluating ? '正在评测…' : '提交评测';
     composeButton.textContent = completed === totalPages ? '✦ 合成朗读视频' : `还有 ${totalPages - completed} 页未录`;
     dots.innerHTML = `<button type="button" aria-label="封面" data-dubbing-page="-1" class="${isCover ? 'active ' : ''}${coverClip ? 'done' : ''}"><span>${coverClip ? '✓' : '秋'}</span></button>` + autumnScenes.map((_, index) => `<button type="button" aria-label="第 ${index + 2} 页" data-dubbing-page="${index}" class="${index === currentIndex ? 'active ' : ''}${clips[index] ? 'done' : ''}"><span>${clips[index] ? '✓' : index + 2}</span></button>`).join('');
@@ -681,6 +707,26 @@ export function setupIllustrationDubbing({
     } finally {
       exporting = false;
       downloadButton.disabled = false;
+    }
+  });
+  shareButton?.addEventListener('click', async () => {
+    const scenes = buildDubbingTimeline(clips, coverClip);
+    if (!scenes.length || exporting) return;
+    stopCompose();
+    exporting = true;
+    shareButton.disabled = true;
+    try {
+      const blob = await exportReadingVideo({
+        scenes, videoUrl: sourceUrl, title: '秋天', download: false,
+        onProgress: progress => setStatus(`正在准备分享视频 ${progress}% · 请保持页面打开`),
+      });
+      showShareDialog(await uploadShareVideo(blob, '秋天'), '视频');
+      setStatus('视频已保存，可以复制链接分享。');
+    } catch (error) {
+      setStatus(error?.message || '视频分享失败，请重试。');
+    } finally {
+      exporting = false;
+      shareButton.disabled = false;
     }
   });
   dots.addEventListener('click', event => {

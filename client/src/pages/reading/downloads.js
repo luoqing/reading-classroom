@@ -2,6 +2,8 @@ export function safeFileName(value) {
   return String(value || '朗读').replace(/[\\/:*?"<>|\x00-\x1f]/g, '').trim() || '朗读';
 }
 
+export const downloadIcon = '<svg aria-hidden="true" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m-4-4 4 4 4-4M4 17v3h16v-3"/></svg>';
+
 export function saveBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -30,7 +32,7 @@ const waitForMedia = (element, event) => new Promise((resolve, reject) => {
   element.addEventListener('error', fail, { once: true });
 });
 
-export async function exportReadingVideo({ scenes, videoUrl, fullAudioUrl, title, onProgress = () => {} }) {
+export async function exportReadingVideo({ scenes, videoUrl, fullAudioUrl, title, download = true, onProgress = () => {} }) {
   const mimeType = window.MediaRecorder && ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'].find(type => MediaRecorder.isTypeSupported(type));
   if (!mimeType || !HTMLCanvasElement.prototype.captureStream) throw Error('当前浏览器不支持视频导出，请用最新版 Chrome 或 Edge。');
   if (!scenes?.length) throw Error('请先完成配音。');
@@ -158,7 +160,8 @@ export async function exportReadingVideo({ scenes, videoUrl, fullAudioUrl, title
     draw();
     recorder.start(1000);
     const result = await finished;
-    saveBlob(result, `${safeFileName(title)}-朗读视频.webm`);
+    if (download) saveBlob(result, `${safeFileName(title)}-朗读视频.webm`);
+    return result;
   } finally {
     if (frame !== null) cancelAnimationFrame(frame);
     if (recorder?.state === 'recording') recorder.stop();
