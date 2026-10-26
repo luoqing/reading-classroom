@@ -55,4 +55,6 @@ export function showShareDialog(url, kind = '录音', expires = false) {
   dialog.onclose = () => dialog.remove();
   document.body.append(dialog);
   dialog.showModal();
+  copy.focus();
+  input.scrollLeft = 0;
 }
