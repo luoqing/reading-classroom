@@ -153,17 +153,18 @@ body:has(.lesson-editor-backdrop) [data-slot="alert-dialog-overlay"] { z-index: 
 .pinyin-edit-pages article > p { margin: 8px 0 16px; font: 16px/1.8 "Noto Serif SC", "Songti SC", serif; }
 .pinyin-token-grid { display: flex; flex-wrap: wrap; gap: 7px; }
 .pinyin-token { position: relative; display: grid; width: 60px; gap: 4px; padding: 6px; border: 1px solid #e4e5d8; border-radius: 9px; background: white; text-align: center; }
+.pinyin-token:hover, .pinyin-token:focus-within { z-index: 2; }
 .pinyin-token.needs-review { border-color: #dda46d; background: #fff2e5; }
 .pinyin-token input { height: 30px; padding: 2px 3px; border: 0 !important; background: transparent !important; text-align: center; font-family: "KaiTi", "Kaiti SC", serif; }
 .pinyin-token input:first-of-type { color: #38694c !important; }
 .pinyin-token input:last-of-type { color: var(--editor-ink) !important; font-size: 17px !important; }
-.pinyin-token-action { position: absolute; top: -8px; z-index: 1; display: grid; width: 19px; height: 19px; place-items: center; padding: 0; border: 0; border-radius: 0; background: #fbfaf5; opacity: 0; transition: opacity .15s ease; }
-.pinyin-token-insert { left: 1px; color: #286345; }
-.pinyin-token-delete { right: 1px; color: #a35443; }
-.pinyin-token:hover .pinyin-token-action, .pinyin-token-action:hover, .pinyin-token-action:focus-visible { opacity: 1; }
-.pinyin-token input:focus ~ .pinyin-token-action { opacity: 0; pointer-events: none; }
+.pinyin-token-action { position: absolute; top: -7px; z-index: 1; display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 1px solid #e4e5d8; border-radius: 7px; background: #fffdf8; opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.pinyin-token-insert { left: -11px; color: #286345; }
+.pinyin-token-delete { right: -11px; color: #a35443; }
+.pinyin-token:hover .pinyin-token-action, .pinyin-token-action:focus-visible { opacity: 1; pointer-events: auto; }
+.pinyin-token input:focus ~ .pinyin-token-action { opacity: 0; pointer-events: none; transition: none; }
 .pinyin-token-action:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
-@media (hover: none) { .pinyin-token-action { opacity: 1; } }
+@media (hover: none) { .pinyin-token-action { opacity: 1; pointer-events: auto; } }
 .pinyin-add-token { display: grid; place-items: center; align-content: center; width: 60px; min-height: 74px; gap: 4px; border: 1px dashed #c6d5c4; border-radius: 9px; background: #f5f9f3; color: var(--editor-green); font-size: 11px; cursor: pointer; }
 .pinyin-add-token:hover { border-color: var(--editor-green); background: #eaf2e8; }
 .rubric-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 14px; }
