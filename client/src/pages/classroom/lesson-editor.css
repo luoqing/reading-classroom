@@ -161,6 +161,7 @@ body:has(.lesson-editor-backdrop) [data-slot="alert-dialog-overlay"] { z-index: 
 .pinyin-token-insert { left: 1px; color: #286345; }
 .pinyin-token-delete { right: 1px; color: #a35443; }
 .pinyin-token:hover .pinyin-token-action, .pinyin-token-action:hover, .pinyin-token-action:focus-visible { opacity: 1; }
+.pinyin-token input:focus ~ .pinyin-token-action { opacity: 0; pointer-events: none; }
 .pinyin-token-action:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
 @media (hover: none) { .pinyin-token-action { opacity: 1; } }
 .pinyin-add-token { display: grid; place-items: center; align-content: center; width: 60px; min-height: 74px; gap: 4px; border: 1px dashed #c6d5c4; border-radius: 9px; background: #f5f9f3; color: var(--editor-green); font-size: 11px; cursor: pointer; }
