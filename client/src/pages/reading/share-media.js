@@ -25,6 +25,7 @@ export function showShareDialog(url, kind = '录音', expires = false) {
   input.value = new URL(url, location.origin).href;
   input.readOnly = true;
   input.setAttribute('aria-label', `${kind}分享链接`);
+  input.onclick = () => input.select();
   const status = document.createElement('p');
   status.className = 'media-share-status';
   status.setAttribute('role', 'status');
@@ -54,6 +55,4 @@ export function showShareDialog(url, kind = '录音', expires = false) {
   dialog.onclose = () => dialog.remove();
   document.body.append(dialog);
   dialog.showModal();
-  input.focus();
-  input.select();
 }
